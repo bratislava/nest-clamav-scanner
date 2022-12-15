@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: ${NAMESPACE}
+  labels:
+    service: app
+spec:
+  selector:
+    matchLabels:
+      service: app
+  template:
+    metadata:
+      labels:
+        service: app
+    spec:
+      containers:
+        - image: ${IMAGE_TAG}
+          name: app
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: 500m
+              memory: 1Gi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          envFrom:
+            - secretRef:
+                name: database-secret
+            - configMapRef:
+                name: env
+          readinessProbe:
+            httpGet:
+              path: /api
+              port: ${INTERNAL_APP_PORT}
+      imagePullSecrets:
+        - name: ${IMAGE_PULL_SECRET}
