@@ -12,3 +12,8 @@ jobs:
       debug: --debug
     secrets:
       sentry-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+    permissions:
+      actions: read
+      contents: write
+      security-events: write
+      pull-requests: write
