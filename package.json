@@ -59,7 +59,7 @@
     "@types/node": "^18.7.15",
     "@types/supertest": "^2.0.12",
     "@typescript-eslint/eslint-plugin": "^5.36.2",
-    "@typescript-eslint/parser": "^5.36.2",
+    "@typescript-eslint/parser": "^5.49.0",
     "chalk": "^5.0.1",
     "clear": "^0.1.0",
     "commander": "^9.4.0",
