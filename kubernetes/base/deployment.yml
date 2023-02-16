@@ -5,6 +5,11 @@ metadata:
   namespace: ${NAMESPACE}
   labels:
     service: app
+  annotations:
+    repositoryUrl: ${BUILD_REPOSITORY_URI}
+    commit: ${COMMIT}
+    tag: ${TAG}
+    image: ${IMAGE}
 spec:
   selector:
     matchLabels:
@@ -26,8 +31,6 @@ spec:
               cpu: 50m
               memory: 64Mi
           envFrom:
-            - secretRef:
-                name: database-secret
             - configMapRef:
                 name: env
           readinessProbe:

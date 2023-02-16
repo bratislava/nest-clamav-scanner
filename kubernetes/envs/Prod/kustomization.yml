@@ -1,6 +1,9 @@
 resources:
   - ../../base
 
+generatorOptions:
+  disableNameSuffixHash: true
+
 configMapGenerator:
 - name: env
   namespace: ${NAMESPACE}

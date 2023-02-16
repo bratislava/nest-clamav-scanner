@@ -2,12 +2,8 @@ resources:
   - deployment.yml
   - service-app.yml
   - ingress.yml
-  # Comment-out these lines if no database is used
-  - stateful-set.yml
-  - service-database.yml
 configurations:
   - configuration.yml
-
 
 # Add composite env vars from secrets
 patches:
@@ -28,11 +24,8 @@ commonLabels:
   app: ${BUILD_REPOSITORY_NAME}
   source: ${BUILD_REPOSITORY_NAME}
 
-commonAnnotations:
-  repositoryUrl: ${BUILD_REPOSITORY_URI}
-  commit: ${COMMIT}
-  tag: ${TAG}
-  image: ${IMAGE}
+generatorOptions:
+  disableNameSuffixHash: true
 
 configMapGenerator:
 - name: env
