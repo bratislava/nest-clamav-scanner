@@ -10,3 +10,9 @@ configMapGenerator:
   behavior: merge
   envs:
   - .env
+
+- name: clamav
+  namespace: ${NAMESPACE}
+  behavior: merge
+  envs:
+  - .clamav.env

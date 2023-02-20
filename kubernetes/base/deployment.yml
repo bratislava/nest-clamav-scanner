@@ -33,6 +33,10 @@ spec:
           envFrom:
             - configMapRef:
                 name: env
+            - configMapRef:
+                name: clamav
+            - secretRef:
+                name: minio-secret-standalone
           readinessProbe:
             httpGet:
               path: /api

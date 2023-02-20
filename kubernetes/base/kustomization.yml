@@ -32,3 +32,8 @@ configMapGenerator:
   namespace: ${NAMESPACE}
   envs:
   - .env
+
+- name: clamav
+  namespace: ${NAMESPACE}
+  envs:
+    - .clamav.env
