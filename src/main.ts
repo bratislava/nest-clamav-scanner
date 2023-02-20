@@ -6,7 +6,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   const app = await NestFactory.create(AppModule);
   const config = new DocumentBuilder()
-    .setTitle('Nest prisma template')
+    .setTitle('Nest clamav scanner')
     .setDescription('Template app for nest with prisma')
     .setVersion('1.0')
     .setContact(
