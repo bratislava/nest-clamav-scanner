@@ -1,20 +1,23 @@
 import { NestFactory } from '@nestjs/core';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const port = process.env.PORT || 3000;
+  const PORT = process.env.PORT || 3000;
+
   const app = await NestFactory.create(AppModule);
   const config = new DocumentBuilder()
     .setTitle('Nest clamav scanner')
-    .setDescription('Template app for nest with prisma')
+    .setDescription(
+      'NestJS ClamAV Scanner using ClamAV.js for scanning files and streams.',
+    )
     .setVersion('1.0')
     .setContact(
-      'Bratislava Inovations',
+      'Bratislava Innovations',
       'https://inovacie.bratislava.sk',
       'inovacie@bratislava.sk',
     )
-    .addServer('https://localhost:' + port + '/')
+    .addServer('https://localhost:' + PORT + '/')
     .addServer('https://nest-prisma-template.dev.bratislava.sk/')
     .build();
 
@@ -22,7 +25,8 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, document);
   app.getHttpAdapter().get('/spec-json', (req, res) => res.json(document));
 
-  await app.listen(port);
-  console.log(`Nest is running on port: ${port}`);
+  await app.listen(PORT);
+  console.log(`Nest is running on port: ${PORT}`);
 }
+
 bootstrap();
