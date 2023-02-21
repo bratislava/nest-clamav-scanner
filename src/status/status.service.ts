@@ -25,7 +25,7 @@ export class StatusService {
     try {
       const result = await this.minioClientService.client;
       return {
-        running: true,
+        running: result,
       };
     } catch (error) {
       this.logger.error(error);
@@ -40,7 +40,7 @@ export class StatusService {
     try {
       const result = await this.clamavClientService.isRunning();
       return {
-        running: true,
+        running: result,
       };
     } catch (error) {
       this.logger.error(error);

@@ -24,7 +24,7 @@ export class ClamavClientService {
       const result = await clamd.ping(
         this.configService.get('CLAMAV_HOST'),
         this.configService.get('CLAMAV_PORT'),
-        300,
+        500,
       );
       return result;
     } catch (error) {
