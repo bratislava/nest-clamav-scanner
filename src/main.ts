@@ -17,8 +17,10 @@ async function bootstrap() {
       'https://inovacie.bratislava.sk',
       'inovacie@bratislava.sk',
     )
-    .addServer('https://localhost:' + PORT + '/')
-    .addServer('https://nest-prisma-template.dev.bratislava.sk/')
+    .addServer('http://localhost:' + PORT + '/')
+    .addServer('https://nest-clamav-scanner.dev.bratislava.sk/')
+    .addServer('https://nest-clamav-scanner.staging.bratislava.sk/')
+    .addServer('https://nest-clamav-scanner.bratislava.sk/')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

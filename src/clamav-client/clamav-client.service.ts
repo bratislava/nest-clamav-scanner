@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as clamd from 'clamdjs';
-import { RunningClamavDto } from './clamav-client.dto';
 
 @Injectable()
 export class ClamavClientService {
@@ -20,21 +19,17 @@ export class ClamavClientService {
   }
 
   //create function which checks if clamav scanner is running
-  async isRunning(): Promise<RunningClamavDto> {
+  async isRunning(): Promise<boolean> {
     try {
       const result = await clamd.ping(
         this.configService.get('CLAMAV_HOST'),
         this.configService.get('CLAMAV_PORT'),
         300,
       );
-      return {
-        running: result,
-      };
+      return result;
     } catch (error) {
       this.logger.error(error);
-      return {
-        running: false,
-      };
+      return false;
     }
   }
 
@@ -49,7 +44,7 @@ export class ClamavClientService {
       return version;
     } catch (error) {
       this.logger.error(error);
-      return 'error';
+      return error;
     }
   }
 }

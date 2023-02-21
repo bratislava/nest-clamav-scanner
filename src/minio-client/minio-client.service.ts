@@ -7,7 +7,7 @@ export class MinioClientService {
   private readonly minio: MinioService;
 
   constructor() {
-    this.logger = new Logger('MinioService');
+    this.logger = new Logger('MinioClientService');
   }
 
   public get client() {
