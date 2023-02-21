@@ -7,7 +7,7 @@ import {
 } from './status.dto';
 import { StatusService } from './status.service';
 
-@Controller('status')
+@Controller()
 export class StatusController {
   constructor(private readonly statusService: StatusService) {}
 
@@ -16,7 +16,7 @@ export class StatusController {
     summary: 'Check minio status',
     description: 'This endpoint checks if minio is running',
   })
-  @Get('minio')
+  @Get('status/minio')
   isMinioRunning(): Promise<MinioRunningDto> {
     return this.statusService.isMinioRunning();
   }
@@ -26,7 +26,7 @@ export class StatusController {
     summary: 'Check clamav status',
     description: 'This endpoint checks if clamav is running',
   })
-  @Get('clamav')
+  @Get('status/clamav')
   isClamavRunning(): Promise<ClamavRunningDto> {
     return this.statusService.isClamavRunning();
   }
@@ -36,7 +36,7 @@ export class StatusController {
     summary: 'Show clamav version',
     description: 'This endpoint shows clamav version',
   })
-  @Get('clamav/version')
+  @Get('version/clamav')
   version(): Promise<ClamavVersionDto> {
     return this.statusService.clamavVersion();
   }
