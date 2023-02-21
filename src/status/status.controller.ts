@@ -16,7 +16,7 @@ export class StatusController {
     summary: 'Check minio status',
     description: 'This endpoint checks if minio is running',
   })
-  @Get('minio/stauts')
+  @Get('minio/status')
   isMinioRunning(): Promise<MinioRunningDto> {
     return this.statusService.isMinioRunning();
   }
