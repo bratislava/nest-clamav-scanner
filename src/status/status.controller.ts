@@ -16,7 +16,7 @@ export class StatusController {
     summary: 'Check minio status',
     description: 'This endpoint checks if minio is running',
   })
-  @Get('status/minio')
+  @Get('minio/stauts')
   isMinioRunning(): Promise<MinioRunningDto> {
     return this.statusService.isMinioRunning();
   }
@@ -26,7 +26,7 @@ export class StatusController {
     summary: 'Check clamav status',
     description: 'This endpoint checks if clamav is running',
   })
-  @Get('status/clamav')
+  @Get('clamav/status')
   isClamavRunning(): Promise<ClamavRunningDto> {
     return this.statusService.isClamavRunning();
   }
@@ -36,7 +36,7 @@ export class StatusController {
     summary: 'Show clamav version',
     description: 'This endpoint shows clamav version',
   })
-  @Get('version/clamav')
+  @Get('clamav/version')
   version(): Promise<ClamavVersionDto> {
     return this.statusService.clamavVersion();
   }
