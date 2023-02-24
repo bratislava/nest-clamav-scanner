@@ -1,29 +1,28 @@
 import { Injectable, Logger } from '@nestjs/common';
-import {
-  ClamavRunningDto,
-  ClamavVersionDto,
-  MinioRunningDto,
-} from './status.dto';
+import { ClamavVersionDto, ServiceRunningDto } from './status.dto';
 import { MinioClientService } from '../minio-client/minio-client.service';
 import { ClamavClientService } from '../clamav-client/clamav-client.service';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class StatusService {
-  private minioClientService: MinioClientService;
   private clamavClientService: ClamavClientService;
   private readonly logger: Logger;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private minioClientService: MinioClientService,
+    private readonly prismaService: PrismaService,
+  ) {
     this.logger = new Logger('StatusService');
     this.clamavClientService = new ClamavClientService(configService);
-    this.minioClientService = new MinioClientService();
   }
 
-  //function which checks if minio is running
-  public async isMinioRunning(): Promise<MinioRunningDto> {
+  //function which checks if prisma is running
+  public async isPrismaRunning(): Promise<ServiceRunningDto> {
     try {
-      const result = await this.minioClientService.client;
+      const result = await this.prismaService.isRunning();
       return {
         running: result,
       };
@@ -35,8 +34,24 @@ export class StatusService {
     }
   }
 
+  //function which checks if minio is running
+  public async isMinioRunning(): Promise<ServiceRunningDto> {
+    try {
+      const result = await this.minioClientService.client();
+      this.logger.log(result);
+      return {
+        running: true,
+      };
+    } catch (error) {
+      this.logger.error(error);
+      return {
+        running: false,
+      };
+    }
+  }
+
   //function which checks if clamav is running
-  public async isClamavRunning(): Promise<ClamavRunningDto> {
+  public async isClamavRunning(): Promise<ServiceRunningDto> {
     try {
       const result = await this.clamavClientService.isRunning();
       return {

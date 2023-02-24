@@ -1,15 +1,21 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
-import {
-  ClamavRunningDto,
-  ClamavVersionDto,
-  MinioRunningDto,
-} from './status.dto';
+import { ClamavVersionDto, ServiceRunningDto } from './status.dto';
 import { StatusService } from './status.service';
 
-@Controller()
+@Controller('api/')
 export class StatusController {
   constructor(private readonly statusService: StatusService) {}
+
+  //endpoint to check if prisma is running
+  @ApiOperation({
+    summary: 'Check prisma status',
+    description: 'This endpoint checks if prisma is running',
+  })
+  @Get('/prisma/status')
+  isPrismaRunning(): Promise<ServiceRunningDto> {
+    return this.statusService.isPrismaRunning();
+  }
 
   //endpoint to check if minio is running
   @ApiOperation({
@@ -17,7 +23,7 @@ export class StatusController {
     description: 'This endpoint checks if minio is running',
   })
   @Get('minio/status')
-  isMinioRunning(): Promise<MinioRunningDto> {
+  isMinioRunning(): Promise<ServiceRunningDto> {
     return this.statusService.isMinioRunning();
   }
 
@@ -27,7 +33,7 @@ export class StatusController {
     description: 'This endpoint checks if clamav is running',
   })
   @Get('clamav/status')
-  isClamavRunning(): Promise<ClamavRunningDto> {
+  isClamavRunning(): Promise<ServiceRunningDto> {
     return this.statusService.isClamavRunning();
   }
 

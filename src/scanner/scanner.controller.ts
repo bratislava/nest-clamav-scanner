@@ -1,19 +1,53 @@
-import { Controller, Post, Query } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  ApiGoneResponse,
+  ApiNotFoundResponse,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ScannerService } from './scanner.service';
-import { BucketFileDto } from './dto/scanner.dto';
+import {
+  BucketFileDto,
+  ScanFileResponseDto,
+  ScanStatusDto,
+} from './scanner.dto';
 
 /*
   Endpoints
  */
 @ApiTags('Scanner')
-@Controller('api/scanner')
+@Controller('api/')
 export class ScannerController {
   constructor(private readonly scannerService: ScannerService) {}
 
-  //create post controller which accepts bucket file dto and starts clamav scan. Add swagger documentation.
-  @Post()
-  scanFile(@Query() bucketFileDto: BucketFileDto): Promise<boolean> {
-    return this.scannerService.scanFile(bucketFileDto);
+  //post controller which accepts bucket file dto and starts clamav scan. Add swagger documentation.
+  @Post('scan')
+  @ApiResponse({
+    status: 202,
+    description: 'File has been accepted for scanning.',
+  })
+  @ApiGoneResponse({
+    status: 410,
+    description: 'File has already been processed.',
+  })
+  scanFile(@Body() bucketFile: BucketFileDto): Promise<ScanFileResponseDto> {
+    return this.scannerService.scanFile(bucketFile);
+  }
+
+  //get controller which returns status of scanned file. Add swagger documentation.
+  @Get('scan/:bucketId/:fileId')
+  @ApiResponse({
+    status: 200,
+    description: 'get status of scanned file',
+  })
+  @ApiNotFoundResponse({
+    status: 404,
+    description: 'File or bucket not found',
+  })
+  getStatus(
+    @Param('bucketId') bucketId: string,
+    @Param('fileId') fileId: string,
+  ): Promise<ScanStatusDto> {
+    return this.scannerService.getStatus(bucketId, fileId);
   }
 }

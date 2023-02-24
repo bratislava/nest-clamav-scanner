@@ -4,21 +4,21 @@ import { MinioService } from 'nestjs-minio-client';
 @Injectable()
 export class MinioClientService {
   private readonly logger: Logger;
-  private readonly minio: MinioService;
 
-  constructor() {
+  constructor(private readonly minioService: MinioService) {
     this.logger = new Logger('MinioClientService');
   }
 
-  public get client() {
-    return this.minio.client;
+  public async client() {
+    this.logger.log('MinioClientService.client');
+    return this.minioService.client;
   }
 
   //function which checks if bucket exists in minio bucket
   public async bucketExists(bucketName: string) {
     try {
-      const bucketExists = await this.minio.client.bucketExists(bucketName);
-      return bucketExists;
+      await this.minioService.client.bucketExists(bucketName);
+      return true;
     } catch (error) {
       this.logger.error(error);
       return false;
@@ -28,11 +28,8 @@ export class MinioClientService {
   //function which checks if file exists in minio bucket
   public async fileExists(bucketName: string, fileName: string) {
     try {
-      const fileExists = await this.minio.client.statObject(
-        bucketName,
-        fileName,
-      );
-      return fileExists;
+      await this.minioService.client.statObject(bucketName, fileName);
+      return true;
     } catch (error) {
       this.logger.error(error);
       return false;

@@ -1,14 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-//dto for bucket file with file id and bucket id as optional.
-export class MinioRunningDto {
-  @ApiProperty({
-    description: 'is minio running?',
-    example: 'true',
-  })
-  running: boolean;
-}
-
 //dto for clamav version.
 export class MinioVersionDto {
   @ApiProperty({
@@ -18,9 +9,9 @@ export class MinioVersionDto {
   version: string;
 }
 
-export class ClamavRunningDto {
+export class ServiceRunningDto {
   @ApiProperty({
-    description: 'is clamav running?',
+    description: 'is service running?',
     example: 'true',
   })
   running: boolean;
