@@ -40,7 +40,7 @@
     "class-validator": "^0.14.0",
     "crypto": "^1.0.1",
     "jsonwebtoken": "^9.0.0",
-    "jwks-rsa": "^2.1.4",
+    "jwks-rsa": "^3.0.1",
     "nestjs-minio-client": "^2.0.0",
     "passport-azure-ad": "^4.3.4",
     "passport-http-bearer": "^1.0.1",
