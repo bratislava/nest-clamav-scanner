@@ -25,6 +25,32 @@ export class MinioClientService {
     }
   }
 
+  //function which lists all files in minio bucket
+  public async listFiles(bucketName: string) {
+    try {
+      const files = await new Promise((resolve, reject) => {
+        const objectsListTemp = [];
+        const stream = this.minioService.client.listObjectsV2(
+          bucketName,
+          '',
+          true,
+          '',
+        );
+
+        stream.on('data', (obj) => objectsListTemp.push(obj.name));
+        stream.on('error', reject);
+        stream.on('end', () => {
+          resolve(objectsListTemp);
+        });
+      });
+
+      return files;
+    } catch (error) {
+      this.logger.error(error);
+      return false;
+    }
+  }
+
   //function which checks if file exists in minio bucket
   public async fileExists(bucketName: string, fileName: string) {
     try {

@@ -1,16 +1,16 @@
-import { ApiProperty } from '@nestjs/swagger';
+import {ApiProperty} from '@nestjs/swagger';
 
 //dto for bucket file with file id and bucket id as optional. Add swagger documentation.
 export class BucketFileDto {
   @ApiProperty({
-    description: 'uid of the file',
-    example: 'ffsdfsd89796',
+    description: 'uid/name of the file in base64',
+    example: 'ffsdfsd89796.pdf',
   })
   fileUid: string;
 
   @ApiProperty({
-    description: 'uid of the bucket',
-    example: 'ffsdfsd89796',
+    description: 'uid/name of the bucket',
+    example: 'super-bucket',
   })
   bucketUid: string;
 }
@@ -18,7 +18,7 @@ export class BucketFileDto {
 //dto for scan result with file id, bucket id, user id as optional and scan result. Add swagger documentation.
 export class ScanStatusDto {
   @ApiProperty({
-    description: 'uid of the file',
+    description: 'uid/name of the file',
     example: 'ffsdfsd89796',
   })
   fileUid: string;

@@ -11,7 +11,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Scanner {
+model Files {
   id            String  @id @default(uuid())
   fileUid       String
   bucketUid     String
