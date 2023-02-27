@@ -74,7 +74,7 @@
     "eslint-plugin-jest": "^27.0.1",
     "eslint-plugin-jsx-a11y": "^6.6.1",
     "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-sonarjs": "^0.15.0",
+    "eslint-plugin-sonarjs": "^0.18.0",
     "figlet": "^1.5.2",
     "jest": "^28.0.0",
     "path": "^0.12.7",
