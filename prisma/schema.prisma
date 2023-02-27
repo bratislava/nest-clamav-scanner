@@ -16,11 +16,14 @@ model Files {
   fileUid       String
   bucketUid     String
   userUid       String?
-  status         String @default("ACCEPTED") // ACCEPTED, QUEUE, SCANNING, DONE, ERROR
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  fileSize      Int
+  fileMimeType  String
+  status        String @default("ACCEPTED") // ACCEPTED, QUEUE, SCANNING, DONE, ERROR
+  meta          Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  @@index([fileUid, bucketUid, userUid, status])
+  @@index([fileUid, bucketUid, userUid, fileSize, status])
 }
 
 

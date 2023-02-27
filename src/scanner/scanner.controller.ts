@@ -1,7 +1,14 @@
 import {Body, Controller, Get, Param, Post} from '@nestjs/common';
-import {ApiGoneResponse, ApiNotFoundResponse, ApiResponse, ApiTags,} from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiGoneResponse,
+  ApiNotFoundResponse,
+  ApiPayloadTooLargeResponse,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {ScannerService} from './scanner.service';
-import {BucketFileDto, ScanFileResponseDto, ScanStatusDto,} from './scanner.dto';
+import {ScanFileDto, ScanFileResponseDto, ScanStatusDto} from './scanner.dto';
 
 /*
   Endpoints
@@ -14,7 +21,7 @@ export class ScannerController {
   //post controller which accepts bucket file dto and starts clamav scan. Add swagger documentation.
   @Post()
   @ApiResponse({
-    status: 202,
+    status: 201,
     description: 'File has been accepted for scanning.',
     type: ScanFileResponseDto,
   })
@@ -22,13 +29,24 @@ export class ScannerController {
     status: 410,
     description: 'File has already been processed.',
   })
-  scanFile(@Body() bucketFile: BucketFileDto): Promise<ScanFileResponseDto> {
-    console.log(bucketFile);
+  @ApiPayloadTooLargeResponse({
+    status: 413,
+    description: 'File for scanning is too large.',
+  })
+  @ApiBadRequestResponse({
+    status: 400,
+    description: 'File did or bucket uid contains invalid parameters.',
+  })
+  @ApiNotFoundResponse({
+    status: 404,
+    description: 'File or bucket not found.',
+  })
+  scanFile(@Body() bucketFile: ScanFileDto): Promise<ScanFileResponseDto> {
     return this.scannerService.scanFile(bucketFile);
   }
 
   //get controller which returns status of scanned file. Add swagger documentation.
-  @Get(':bucketId/:fileId')
+  @Get(':bucketUid64/:fileUid64')
   @ApiResponse({
     status: 200,
     description: 'get status of scanned file. Params are in base64 format.',
@@ -38,10 +56,33 @@ export class ScannerController {
     status: 404,
     description: 'File or bucket not found',
   })
+  @ApiBadRequestResponse({
+    status: 400,
+    description: 'File did or bucket uid contains invalid parameters.',
+  })
   getStatus(
-    @Param('bucketId64') bucketId64: string,
-    @Param('fileId64') fileId64: string,
+    @Param('bucketUid64') bucketId64: string,
+    @Param('fileUid64') fileId64: string,
   ): Promise<ScanStatusDto> {
     return this.scannerService.getStatus(bucketId64, fileId64);
+  }
+
+  //get controller which returns status of scanned file by record id.
+  @Get(':id')
+  @ApiResponse({
+    status: 200,
+    description: 'get status of scanned file by record id.',
+    type: ScanStatusDto,
+  })
+  @ApiNotFoundResponse({
+    status: 404,
+    description: 'File or bucket not found',
+  })
+  @ApiBadRequestResponse({
+    status: 400,
+    description: 'File did or bucket uid contains invalid parameters.',
+  })
+  getStatusById(@Param('id') id: string): Promise<ScanStatusDto> {
+    return this.scannerService.getStatusById(id);
   }
 }

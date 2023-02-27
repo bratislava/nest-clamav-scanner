@@ -54,8 +54,12 @@ export class MinioClientService {
   //function which checks if file exists in minio bucket
   public async fileExists(bucketName: string, fileName: string) {
     try {
-      await this.minioService.client.statObject(bucketName, fileName);
-      return true;
+      const result = await this.minioService.client.statObject(
+        bucketName,
+        fileName,
+      );
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       return false;

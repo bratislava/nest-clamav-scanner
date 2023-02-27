@@ -4,17 +4,19 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  PayloadTooLargeException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClamavClientService } from 'src/clamav-client/clamav-client.service';
 import { MinioClientService } from 'src/minio-client/minio-client.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ScanFileDto, ScanFileResponseDto, ScanStatusDto } from './scanner.dto';
 import {
-  BucketFileDto,
-  ScanFileResponseDto,
-  ScanStatusDto,
-} from './scanner.dto';
-import { isBase64, isValidBucketUidAndFileUid } from '../common/utils/helpers';
+  isBase64,
+  isDefined,
+  isValidBucketUidAndFileUid,
+} from '../common/utils/helpers';
 
 @Injectable()
 export class ScannerService {
@@ -30,54 +32,74 @@ export class ScannerService {
     this.clamavClientService = new ClamavClientService(configService);
   }
 
-  public async scanFile(
-    bucketFile: BucketFileDto,
-  ): Promise<ScanFileResponseDto> {
+  public async scanFile(bucketFile: ScanFileDto): Promise<ScanFileResponseDto> {
     if (!isValidBucketUidAndFileUid(bucketFile.bucketUid, bucketFile.fileUid)) {
       throw new BadRequestException(
         'Please provide a valid bucketUid and fileUid.',
       );
     }
 
-    //check if file has already been scanned
-    try {
-      const fileStatus = await this.getStatus(
-        bucketFile.bucketUid,
-        bucketFile.fileUid,
+    //check if file has already been scanned - record is in database
+    const fileStatus = await this.prismaService.files.findFirst({
+      where: {
+        AND: [
+          { bucketUid: bucketFile.bucketUid },
+          { fileUid: bucketFile.fileUid },
+        ],
+      },
+    });
+
+    if (fileStatus) {
+      //base64 bucketUid and fileUid
+      const bucketUid64 = Buffer.from(bucketFile.bucketUid).toString('base64');
+      const fileUid64 = Buffer.from(bucketFile.fileUid).toString('base64');
+
+      throw new GoneException(
+        `This file has already been submitted for scanning. Please check the status of the scan by GET /api/scan/${bucketUid64}/${fileUid64}`,
       );
-      if (fileStatus) {
-        throw new GoneException(
-          'This file has already been submitted for scanning. Please check the status of the scan by GET /api/scan/:bucketUid/:fileUid.',
-        );
-      }
-    } catch (error) {
-      //silence is golden
-      //our goal is to return the exception that file was not scanned, because we don't want to scan the file again
     }
-    //list all files in bucket
-    const filesInBucket = await this.minioClientService.listFiles(
-      bucketFile.bucketUid,
-    );
-    this.logger.log(filesInBucket);
 
     //check if file exists in minio
-    const fileExists = await this.minioClientService.fileExists(
+    const fileInfo = await this.minioClientService.fileExists(
       bucketFile.bucketUid,
       bucketFile.fileUid,
     );
 
-    if (!fileExists) {
+    if (!fileInfo) {
       throw new NotFoundException(
         'This file does not exist in the bucket. Please check the bucketUid and fileUid.',
       );
     }
 
-    return {
-      status: 'ACCEPTED',
-      message: 'File has been accepted for scanning',
-    };
+    if (fileInfo.size > this.configService.get('MAX_FILE_SIZE')) {
+      throw new PayloadTooLargeException(
+        'File size exceeds the maximum allowed size. Please check the file size.',
+      );
+    }
 
-    //scanBucket function which takes bucketId as parameter, checks if clamav is running and if bucket exists in minio. Then it starts clamav scan and returns promise of boolean.
+    try {
+      const result = await this.prismaService.files.create({
+        data: {
+          bucketUid: bucketFile.bucketUid,
+          fileUid: bucketFile.fileUid,
+          userUid: bucketFile.userUid,
+          fileSize: fileInfo.size,
+          fileMimeType: fileInfo.metaData['content-type'],
+          status: 'ACCEPTED',
+        },
+      });
+
+      return {
+        status: 'ACCEPTED',
+        message: `File: ${bucketFile.fileUid} has been successfully accepted for scanning.`,
+        id: result.id,
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw new UnprocessableEntityException(
+        `There was an error while saving the file to the database. Please try again later.`,
+      );
+    }
   }
 
   //function which returns scanner status by fileUid from prisma
@@ -88,7 +110,7 @@ export class ScannerService {
     //check if fileUid64 and bucketUid64 are valid base64 strings
     if (!isBase64(bucketUid64) || !isBase64(fileUid64)) {
       throw new BadRequestException(
-        'Please provide a valid base64 bucketUid and fileUid.',
+        'Base64 of bucketUid or fileUid is not correct.',
       );
     }
     const bucketUid = Buffer.from(bucketUid64, 'base64').toString('ascii');
@@ -109,6 +131,28 @@ export class ScannerService {
     } catch (error) {
       throw new NotFoundException(
         `This file: ${fileUid} has not been submitted for scanning. Please submit the file for scanning by POST /api/scan.`,
+      );
+    }
+  }
+
+  public async getStatusById(id: string): Promise<ScanStatusDto> {
+    if (!isDefined(id)) {
+      throw new BadRequestException('Please provide a valid id');
+    }
+
+    if (isBase64(id)) {
+      throw new BadRequestException(
+        'Please provide a valid id. Id should not be base64 encoded.',
+      );
+    }
+
+    try {
+      return await this.prismaService.files.findUniqueOrThrow({
+        where: { id: id },
+      });
+    } catch (error) {
+      throw new NotFoundException(
+        `This file with id: ${id} has not been submitted for scanning. Please submit the file for scanning by POST /api/scan.`,
       );
     }
   }
