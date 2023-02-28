@@ -17,7 +17,7 @@ model Files {
   userUid       String?
   fileSize      Int
   fileMimeType  String
-  status        String @default("ACCEPTED") // ACCEPTED, QUEUE, SCANNING, DONE, ERROR
+  status        String @default("ACCEPTED") // ACCEPTED, QUEUED, SCANNING, DONE, ERROR
   meta          Json?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

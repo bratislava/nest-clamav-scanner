@@ -25,6 +25,20 @@ export class MinioClientService {
     }
   }
 
+  //function which loads file stream from minio bucket
+  public async loadFileStream(bucketName: string, fileName: string) {
+    try {
+      const fileStream = await this.minioService.client.getObject(
+        bucketName,
+        fileName,
+      );
+      return fileStream;
+    } catch (error) {
+      this.logger.error(error);
+      return false;
+    }
+  }
+
   //function which lists all files in minio bucket
   public async listFiles(bucketName: string) {
     try {

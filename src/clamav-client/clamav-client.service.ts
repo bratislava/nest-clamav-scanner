@@ -18,6 +18,15 @@ export class ClamavClientService {
     );
   }
 
+  async scanStream(readStream: object): Promise<any> {
+    return await this.scanner.scanStream(readStream, 1800);
+  }
+
+  //function which gets clam reply
+  async isCleanReply(result: any): Promise<boolean> {
+    return await this.scanner.isCleanReply(result);
+  }
+
   //create function which checks if clamav scanner is running
   async isRunning(): Promise<boolean> {
     try {

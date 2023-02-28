@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ScannerModule } from './scanner/scanner.module';
 import { MinioClientModule } from './minio-client/minio-client.module';
 import { ClamavClientModule } from './clamav-client/clamav-client.module';
+import { ScannerCronModule } from './scanner-cron/scanner-cron.module';
 
 @Module({
   controllers: [AppController],
@@ -18,6 +19,7 @@ import { ClamavClientModule } from './clamav-client/clamav-client.module';
     PrismaModule,
     MinioClientModule,
     ClamavClientModule,
+    ScannerCronModule,
   ],
 })
 export class AppModule {}
