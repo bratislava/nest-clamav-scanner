@@ -7,10 +7,11 @@ import {ScannerCronService} from './scanner-cron.service';
  */
 @Controller('')
 export class ScannerCronController {
-  constructor(private readonly scannerCronService: ScannerCronService) {}
+  constructor(private readonly scannerCronService: ScannerCronService) {
+  }
 
-  @Get('api/cronscan')
-  async cronScan(): Promise<any> {
-    return this.scannerCronService.mainScanBatchProcess();
+  @Get('api/cronstart')
+  async cronStart(): Promise<any> {
+    return this.scannerCronService.cronStart();
   }
 }

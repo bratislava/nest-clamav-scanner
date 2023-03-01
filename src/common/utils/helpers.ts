@@ -6,7 +6,9 @@ const validScanStatuses = [
   'SCANNING',
   'SAFE',
   'INFECTED',
-  'ERROR',
+  'NOT FOUND',
+  'MOVE ERROR',
+  'SCAN ERROR',
 ];
 
 export function isValid(resource: any): boolean {

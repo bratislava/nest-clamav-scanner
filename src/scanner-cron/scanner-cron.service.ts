@@ -1,7 +1,6 @@
 import {
   Injectable,
   Logger,
-  NotFoundException,
   PreconditionFailedException,
 } from '@nestjs/common';
 import { ScannerService } from '../scanner/scanner.service';
@@ -31,13 +30,32 @@ export class ScannerCronService {
     this.clamavClientService = new ClamavClientService(configService);
   }
 
-  async mainScanBatchProcess(): Promise<any> {
+  async cronStart(): Promise<void> {
+    //check if cron is already running
+    this.logger.log('CronScan waking up...');
+    if (global.CronRunning) {
+      this.logger.error(
+        'CronScan another process is already running. Sleeping...',
+      );
+      return;
+    }
+    global.CronRunning = true;
+
     //check if clamav is running
     const clamavRunning = await this.clamavClientService.isRunning();
     if (!clamavRunning) {
       throw new PreconditionFailedException('Clamav is not running.');
     }
 
+    //check if we have some stacked files when process was stopped and fix them
+    await this.fixStackedFiles();
+
+    await this.mainScanBatchProcess();
+    this.logger.log('CronScan sleeping...');
+    global.CronRunning = false;
+  }
+
+  async mainScanBatchProcess(): Promise<any> {
     //get all files which are in state ACCEPTED
     const files = await this.prismaService.files.findMany({
       where: {
@@ -48,9 +66,10 @@ export class ScannerCronService {
 
     //if no files are found, return
     if (files.length === 0) {
-      this.logger.log('No files found to scan.');
+      this.logger.log('No files found to scan (searching for ACCEPTED state).');
       return;
     }
+    this.logger.log(`Found ${files.length} files to scan.`);
 
     //update status of array files to QUEUED
     const updateStatus = this.updateScanStatusBatch(files, 'QUEUED');
@@ -64,7 +83,10 @@ export class ScannerCronService {
     const filesBatches = chunkArray(files, 4);
 
     //scan batch of files
+    let j = 1;
     for (const files of filesBatches) {
+      this.logger.debug(`Scanning ${j}. batch of ${files.length} files.`);
+
       const promiseQueue = [];
       for (const file of files) {
         promiseQueue.push(this.scanFileProcess(file));
@@ -75,7 +97,9 @@ export class ScannerCronService {
       this.logger.log(
         `Batch scan finished with results: ${results.join(', ')}`,
       );
+      j++;
     }
+
     this.logger.log(`All batches scanned. Sleeping.`);
   }
 
@@ -95,20 +119,32 @@ export class ScannerCronService {
         file.fileUid,
       );
     } catch (error) {
-      throw new NotFoundException(
-        `${file.fileUid} not found in minio bucket ${file.bucketUid}`,
-      );
+      await this.updateScanStatus(file.id, 'NOT FOUND');
+
+      this.logger.error(`${file.fileUid} not found in minio bucket.`);
+      return false;
     }
     this.logger.debug(`${file.fileUid} is in Minio`);
 
     //scan file in clamav
-    const isSafe = await this.scanFileInClamav(file, fileStream);
+    let isSafe;
+    try {
+      isSafe = await this.scanFileInClamav(file, fileStream);
+    } catch (error) {
+      await this.updateScanStatus(file.id, 'SCAN ERROR');
+
+      throw new PreconditionFailedException(
+        `${file.fileUid} could not be scanned.`,
+      );
+    }
 
     const scanStatus = isSafe ? 'SAFE' : 'INFECTED';
 
     //move file to safe or infected bucket
     try {
-      const destinationBucket = `CLAMAV_${scanStatus}_BUCKET`;
+      const destinationBucket = this.configService.get(
+        `CLAMAV_${scanStatus}_BUCKET`,
+      );
       await this.minioClientService.moveFileBetweenBuckets(
         file.bucketUid,
         file.fileUid,
@@ -116,6 +152,8 @@ export class ScannerCronService {
         file.fileUid,
       );
     } catch (error) {
+      await this.updateScanStatus(file.id, 'MOVE ERROR');
+
       throw new PreconditionFailedException(
         `${file.fileUid} could not be moved to ${scanStatus} bucket.`,
       );
@@ -165,7 +203,7 @@ export class ScannerCronService {
       );
     }
 
-    //update scan status of files which are in state ACCEPTED to new state which is QUEUE
+    //update scan status of files
     try {
       await this.prismaService.files.updateMany({
         where: {
@@ -174,12 +212,12 @@ export class ScannerCronService {
           },
         },
         data: {
-          status: 'QUEUED',
+          status: to,
         },
       });
       return true;
     } catch (error) {
-      console.log(error);
+      console.error(error);
       return false;
     }
   }
@@ -202,5 +240,45 @@ export class ScannerCronService {
       },
     });
     return updateScanStatus;
+  }
+
+  //function which checks if some files are in state QUEUED or SCANNING and if so, it starts the scan process
+  async fixStackedFiles(): Promise<void> {
+    //get all files which are in state QUEUED or SCANNING
+    const stackedFiles = await this.prismaService.files.findMany({
+      where: {
+        OR: [
+          {
+            status: 'QUEUED',
+          },
+          {
+            status: 'SCANNING',
+          },
+          {
+            status: 'SCAN ERROR',
+          },
+        ],
+      },
+      take: 200,
+    });
+
+    //if no files are found, return
+    if (stackedFiles.length === 0) {
+      this.logger.debug('No stacked files found.');
+      return;
+    } else {
+      this.logger.debug(
+        `Found ${stackedFiles.length} stacked files from unfinished runs. Changing state status to ACCEPTED.`,
+      );
+    }
+
+    //update status of array files to ACCEPTED
+    const updateStatus = this.updateScanStatusBatch(stackedFiles, 'ACCEPTED');
+    if (!updateStatus) {
+      throw new PreconditionFailedException(
+        'Could not update status ACCEPTED of stacked files.',
+      );
+    }
+    return;
   }
 }

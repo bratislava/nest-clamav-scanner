@@ -81,16 +81,36 @@ export class MinioClientService {
   ) {
     const conds = new CopyConditions();
 
-    await this.minioService.client.copyObject(
-      destinationBucketName,
-      destinationFileName,
-      `/${sourceBucketName}/${sourceFileName}`,
-      conds,
+    this.logger.debug(
+      `Moving file ${sourceFileName} from bucket ${sourceBucketName} to bucket ${destinationBucketName} with name ${destinationFileName}`,
     );
 
-    await this.minioService.client.removeObject(
-      sourceBucketName,
-      sourceFileName,
-    );
+    try {
+      await this.minioService.client.copyObject(
+        destinationBucketName,
+        destinationFileName,
+        `/${sourceBucketName}/${sourceFileName}`,
+        conds,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error while moving file ${sourceFileName} from bucket ${sourceBucketName} to bucket ${destinationBucketName} with name ${destinationFileName}. Error: ${error}`,
+      );
+      return false;
+    }
+
+    try {
+      await this.minioService.client.removeObject(
+        sourceBucketName,
+        sourceFileName,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error while removing file ${sourceFileName} from bucket ${sourceBucketName}. Error: ${error}`,
+      );
+      return false;
+    }
+
+    return true;
   }
 }
