@@ -11,6 +11,6 @@ export class ScannerCronController {
 
   @Get('api/cronscan')
   async cronScan(): Promise<any> {
-    return this.scannerCronService.cronScan();
+    return this.scannerCronService.mainScanBatchProcess();
   }
 }

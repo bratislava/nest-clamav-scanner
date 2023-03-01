@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as clamd from 'clamdjs';
+import { execSync } from 'child_process';
 
 @Injectable()
 export class ClamavClientService {
@@ -18,23 +19,27 @@ export class ClamavClientService {
     );
   }
 
-  async scanStream(readStream: object): Promise<any> {
-    return await this.scanner.scanStream(readStream, 1800);
+  scanStream(readStream: object): any {
+    //scan stream with timeout 20 minutes
+    return this.scanner.scanStream(readStream, 60000 * 20);
   }
 
   //function which gets clam reply
-  async isCleanReply(result: any): Promise<boolean> {
-    return await this.scanner.isCleanReply(result);
+  async isFileSafe(result: any): Promise<boolean> {
+    return await clamd.isCleanReply(result);
   }
 
   //create function which checks if clamav scanner is running
   async isRunning(): Promise<boolean> {
     try {
-      const result = await clamd.ping(
-        this.configService.get('CLAMAV_HOST'),
-        this.configService.get('CLAMAV_PORT'),
-        300,
-      );
+      this.logger.debug('Checking if clamav is running...');
+      const cmd = `echo PING | nc -w 3 ${this.configService.get(
+        'CLAMAV_HOST',
+      )} ${this.configService.get('CLAMAV_PORT')}`;
+      const response = execSync(cmd, { encoding: 'utf8' });
+      const result = response.trim() === 'PONG';
+
+      this.logger.debug(`Clamav running result: ${result}`);
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -44,15 +49,17 @@ export class ClamavClientService {
 
   //function which shows clamav version
   async version(): Promise<string> {
+    this.logger.debug('Checking if clamav version...');
     try {
       const version = await clamd.version(
         this.configService.get('CLAMAV_HOST'),
         this.configService.get('CLAMAV_PORT'),
         300,
       );
+      this.logger.debug(`Clamav version result: ${version}`);
       return version;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Unable to check if clamav is running: ${error}`);
       return error;
     }
   }

@@ -6,10 +6,16 @@ import {
 } from '@nestjs/common';
 import { ScannerService } from '../scanner/scanner.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { isValidScanStatus, listOfStatuses } from '../common/utils/helpers';
+import {
+  chunkArray,
+  isValidScanStatus,
+  listOfStatuses,
+} from '../common/utils/helpers';
 import { ClamavClientService } from '../clamav-client/clamav-client.service';
 import { MinioClientService } from '../minio-client/minio-client.service';
 import { ConfigService } from '@nestjs/config';
+import { Files } from '@prisma/client';
+import { Readable as ReadableStream } from 'stream';
 
 @Injectable()
 export class ScannerCronService {
@@ -25,11 +31,11 @@ export class ScannerCronService {
     this.clamavClientService = new ClamavClientService(configService);
   }
 
-  async cronScan(): Promise<any> {
+  async mainScanBatchProcess(): Promise<any> {
     //check if clamav is running
     const clamavRunning = await this.clamavClientService.isRunning();
     if (!clamavRunning) {
-      throw new PreconditionFailedException('Clamav is not running');
+      throw new PreconditionFailedException('Clamav is not running.');
     }
 
     //get all files which are in state ACCEPTED
@@ -37,60 +43,122 @@ export class ScannerCronService {
       where: {
         status: 'ACCEPTED',
       },
-      take: 10,
+      take: 80,
     });
 
+    //if no files are found, return
+    if (files.length === 0) {
+      this.logger.log('No files found to scan.');
+      return;
+    }
+
+    //update status of array files to QUEUED
+    const updateStatus = this.updateScanStatusBatch(files, 'QUEUED');
+    if (!updateStatus) {
+      throw new PreconditionFailedException(
+        'Could not update status QUEUED of files.',
+      );
+    }
+
+    //split files into batches of 4 elements
+    const filesBatches = chunkArray(files, 4);
+
     //scan batch of files
-    for (const file of files) {
-      this.logger.log(`Scanning file ${file.fileUid}`);
+    for (const files of filesBatches) {
+      const promiseQueue = [];
+      for (const file of files) {
+        promiseQueue.push(this.scanFileProcess(file));
+      }
 
-      //update scan status of file to SCANNING
-      /*
-                                                                                                                              const updateScanStatus = await this.prismaService.files.update({
-                                                                                                                                data: {
-                                                                                                                                  status: 'SCANNING',
-                                                                                                                                },
-                                                                                                                                where: {
-                                                                                                                                  id: file.id,
-                                                                                                                                },
-                                                                                                                              });
-                                                                                                                              */
+      //wait for all promises to be resolved
+      const results = await Promise.all(promiseQueue);
+      this.logger.log(
+        `Batch scan finished with results: ${results.join(', ')}`,
+      );
+    }
+    this.logger.log(`All batches scanned. Sleeping.`);
+  }
 
-      //load file from minio
-      const fileStream = await this.minioClientService.loadFileStream(
+  async scanFileProcess(file: Files): Promise<boolean> {
+    try {
+      await this.updateScanStatus(file.id, 'SCANNING');
+    } catch (error) {
+      throw new PreconditionFailedException(
+        `${file.fileUid} could not be updated to SCANNING status.`,
+      );
+    }
+
+    let fileStream;
+    try {
+      fileStream = await this.minioClientService.loadFileStream(
         file.bucketUid,
         file.fileUid,
       );
-
-      if (fileStream === false) {
-        this.logger.error(
-          `File ${file.fileUid} not found in minio bucket ${file.bucketUid}`,
-        );
-        throw new NotFoundException(
-          `File ${file.fileUid} not found in minio bucket ${file.bucketUid}`,
-        );
-      }
-
-      const startTime = Date.now();
-      let result;
-      try {
-        result = await this.clamavClientService.scanStream(fileStream);
-      } finally {
-        // Ensure stream is destroyed in all situations to prevent any
-        // resource leaks.
-        fileStream.destroy();
-      }
-
-      const scanDuration = Date.now() - startTime;
-      this.logger.log(
-        `File ${file.fileUid} was scanned in: ${scanDuration}ms with result: ${result}`,
+    } catch (error) {
+      throw new NotFoundException(
+        `${file.fileUid} not found in minio bucket ${file.bucketUid}`,
       );
     }
+    this.logger.debug(`${file.fileUid} is in Minio`);
+
+    //scan file in clamav
+    const isSafe = await this.scanFileInClamav(file, fileStream);
+
+    const scanStatus = isSafe ? 'SAFE' : 'INFECTED';
+
+    //move file to safe or infected bucket
+    try {
+      const destinationBucket = `CLAMAV_${scanStatus}_BUCKET`;
+      await this.minioClientService.moveFileBetweenBuckets(
+        file.bucketUid,
+        file.fileUid,
+        destinationBucket,
+        file.fileUid,
+      );
+    } catch (error) {
+      throw new PreconditionFailedException(
+        `${file.fileUid} could not be moved to ${scanStatus} bucket.`,
+      );
+    }
+
+    //update scan status of file
+    try {
+      await this.updateScanStatus(file.id, scanStatus);
+    } catch (error) {
+      throw new PreconditionFailedException(
+        `${file.fileUid} could not be updated to ${scanStatus} status.`,
+      );
+    }
+    return isSafe;
   }
 
-  async updateScanStatus(from: string, to: string): Promise<any> {
+  async scanFileInClamav(
+    file: Files,
+    fileStream: ReadableStream,
+  ): Promise<boolean> {
+    const startTime = Date.now();
+    this.logger.debug(`${file.fileUid} scanning started at time: ${startTime}`);
+    let response;
+    try {
+      response = await this.clamavClientService.scanStream(fileStream);
+      this.logger.debug(
+        `${file.fileUid} scanning response from clamav: ${response}`,
+      );
+    } finally {
+      //stream is destroyed in all situations to prevent any resource leaks.
+      fileStream.destroy();
+    }
+    const result = await this.clamavClientService.isFileSafe(response);
+    const scanDuration = Date.now() - startTime;
+    this.logger.log(
+      `${file.fileUid} was scanned in: ${scanDuration}ms with result: ${result}`,
+    );
+    return result;
+  }
+
+  async updateScanStatusBatch(files: Files[], to: string): Promise<boolean> {
     //check if from and to status are valid
-    if (!isValidScanStatus(from) && !isValidScanStatus(to)) {
+    if (!isValidScanStatus(to)) {
       throw new Error(
         'Please provide a valid scan status. Available options are:' +
           listOfStatuses(),
@@ -98,12 +166,39 @@ export class ScannerCronService {
     }
 
     //update scan status of files which are in state ACCEPTED to new state which is QUEUE
-    const updateScanStatus = await this.prismaService.files.updateMany({
+    try {
+      await this.prismaService.files.updateMany({
+        where: {
+          id: {
+            in: files.map((file) => file.id),
+          },
+        },
+        data: {
+          status: 'QUEUED',
+        },
+      });
+      return true;
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+  }
+
+  async updateScanStatus(id: string, status: string): Promise<any> {
+    if (!isValidScanStatus(status)) {
+      throw new Error(
+        'Please provide a valid scan status. Available options are:' +
+          listOfStatuses(),
+      );
+    }
+
+    //update scan status of files which are in state ACCEPTED to new state which is QUEUE
+    const updateScanStatus = await this.prismaService.files.update({
       data: {
-        status: to,
+        status: status,
       },
       where: {
-        status: from,
+        id: id,
       },
     });
     return updateScanStatus;

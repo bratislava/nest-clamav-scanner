@@ -46,7 +46,7 @@ export class ScannerController {
   }
 
   //get controller which returns status of scanned file. Add swagger documentation.
-  @Get(':bucketUid64/:fileUid64')
+  @Get(':fileUid64/:bucketUid64')
   @ApiResponse({
     status: 200,
     description: 'get status of scanned file. Params are in base64 format.',
@@ -67,22 +67,25 @@ export class ScannerController {
     return this.scannerService.getStatus(bucketId64, fileId64);
   }
 
-  //get controller which returns status of scanned file by record id.
-  @Get(':id')
+  //get controller which returns status of scanned file by record id or by name in
+  @Get(':resourceId')
   @ApiResponse({
     status: 200,
-    description: 'get status of scanned file by record id.',
+    description:
+      'Get status of scanned file by record id or by fileUid in base64. When using fileUid (filename) in base64 we will use default bucket as default.',
     type: ScanStatusDto,
   })
   @ApiNotFoundResponse({
     status: 404,
-    description: 'File or bucket not found',
+    description: 'File not found',
   })
   @ApiBadRequestResponse({
     status: 400,
     description: 'File did or bucket uid contains invalid parameters.',
   })
-  getStatusById(@Param('id') id: string): Promise<ScanStatusDto> {
-    return this.scannerService.getStatusById(id);
+  getStatusById(
+    @Param('resourceId') resourceId: string,
+  ): Promise<ScanStatusDto> {
+    return this.scannerService.getStatusByResourceId(resourceId);
   }
 }

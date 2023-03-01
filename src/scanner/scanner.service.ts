@@ -12,11 +12,7 @@ import { ClamavClientService } from 'src/clamav-client/clamav-client.service';
 import { MinioClientService } from 'src/minio-client/minio-client.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ScanFileDto, ScanFileResponseDto, ScanStatusDto } from './scanner.dto';
-import {
-  isBase64,
-  isDefined,
-  isValidBucketUidAndFileUid,
-} from '../common/utils/helpers';
+import { isBase64, isDefined, isValid } from '../common/utils/helpers';
 
 @Injectable()
 export class ScannerService {
@@ -33,10 +29,12 @@ export class ScannerService {
   }
 
   public async scanFile(bucketFile: ScanFileDto): Promise<ScanFileResponseDto> {
-    if (!isValidBucketUidAndFileUid(bucketFile.bucketUid, bucketFile.fileUid)) {
-      throw new BadRequestException(
-        'Please provide a valid bucketUid and fileUid.',
-      );
+    if (!isValid(bucketFile.fileUid)) {
+      throw new BadRequestException('Please provide a valid fileUid.');
+    }
+
+    if (!isValid(bucketFile.bucketUid)) {
+      bucketFile.bucketUid = this.configService.get('CLAMAV_UNSCANNED_BUCKET');
     }
 
     //check if file has already been scanned - record is in database
@@ -55,7 +53,7 @@ export class ScannerService {
       const fileUid64 = Buffer.from(bucketFile.fileUid).toString('base64');
 
       throw new GoneException(
-        `This file has already been submitted for scanning. Please check the status of the scan by GET /api/scan/${bucketUid64}/${fileUid64}`,
+        `This file has already been submitted for scanning. Please check the status of the scan by GET /api/scan/${fileUid64}/${bucketUid64} or by GET /api/scan/${fileStatus.id}`,
       );
     }
 
@@ -67,7 +65,7 @@ export class ScannerService {
 
     if (!fileInfo) {
       throw new NotFoundException(
-        'This file does not exist in the bucket. Please check the bucketUid and fileUid.',
+        `This file does not exist in the bucket '${bucketFile.bucketUid}'. Please check if the bucketUid or fileUid is correct.`,
       );
     }
 
@@ -116,7 +114,7 @@ export class ScannerService {
     const bucketUid = Buffer.from(bucketUid64, 'base64').toString('ascii');
     const fileUid = Buffer.from(fileUid64, 'base64').toString('ascii');
 
-    if (!isValidBucketUidAndFileUid(bucketUid, fileUid)) {
+    if (!isValid(bucketUid) && !isValid(fileUid)) {
       throw new BadRequestException(
         'Please provide a valid bucketUid and fileUid.',
       );
@@ -135,24 +133,31 @@ export class ScannerService {
     }
   }
 
-  public async getStatusById(id: string): Promise<ScanStatusDto> {
-    if (!isDefined(id)) {
+  public async getStatusByResourceId(
+    resourceId: string,
+  ): Promise<ScanStatusDto> {
+    if (!isDefined(resourceId)) {
       throw new BadRequestException('Please provide a valid id');
     }
 
-    if (isBase64(id)) {
-      throw new BadRequestException(
-        'Please provide a valid id. Id should not be base64 encoded.',
-      );
-    }
-
     try {
-      return await this.prismaService.files.findUniqueOrThrow({
-        where: { id: id },
-      });
+      if (isBase64(resourceId)) {
+        return await this.prismaService.files.findFirstOrThrow({
+          where: {
+            AND: [
+              { bucketUid: this.configService.get('CLAMAV_UNSCANNED_BUCKET') },
+              { fileUid: resourceId },
+            ],
+          },
+        });
+      } else {
+        return await this.prismaService.files.findUniqueOrThrow({
+          where: { id: resourceId },
+        });
+      }
     } catch (error) {
       throw new NotFoundException(
-        `This file with id: ${id} has not been submitted for scanning. Please submit the file for scanning by POST /api/scan.`,
+        `This file with id: ${resourceId} has not been submitted for scanning. Please submit the file for scanning by POST /api/scan.`,
       );
     }
   }

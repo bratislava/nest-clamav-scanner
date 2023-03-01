@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MinioService } from 'nestjs-minio-client';
+import { CopyConditions } from 'minio';
 
 @Injectable()
 export class MinioClientService {
@@ -27,16 +28,7 @@ export class MinioClientService {
 
   //function which loads file stream from minio bucket
   public async loadFileStream(bucketName: string, fileName: string) {
-    try {
-      const fileStream = await this.minioService.client.getObject(
-        bucketName,
-        fileName,
-      );
-      return fileStream;
-    } catch (error) {
-      this.logger.error(error);
-      return false;
-    }
+    return await this.minioService.client.getObject(bucketName, fileName);
   }
 
   //function which lists all files in minio bucket
@@ -78,5 +70,27 @@ export class MinioClientService {
       this.logger.error(error);
       return false;
     }
+  }
+
+  //function which moves file from one bucket to another
+  public async moveFileBetweenBuckets(
+    sourceBucketName: string,
+    sourceFileName: string,
+    destinationBucketName: string,
+    destinationFileName: string,
+  ) {
+    const conds = new CopyConditions();
+
+    await this.minioService.client.copyObject(
+      destinationBucketName,
+      destinationFileName,
+      `/${sourceBucketName}/${sourceFileName}`,
+      conds,
+    );
+
+    await this.minioService.client.removeObject(
+      sourceBucketName,
+      sourceFileName,
+    );
   }
 }

@@ -5,23 +5,20 @@ const validScanStatuses = [
   'QUEUED',
   'SCANNING',
   'SAFE',
-  'HARMFUL',
+  'INFECTED',
   'ERROR',
 ];
 
-export function isValidBucketUidAndFileUid(
-  bucketUid: any,
-  fileUid: any,
-): boolean {
-  if (!isString(bucketUid) || !isString(fileUid)) {
+export function isValid(resource: any): boolean {
+  if (!isString(resource)) {
     return false;
   }
 
-  if (bucketUid.length < 3 || fileUid.length < 3) {
+  if (resource.length < 3) {
     return false;
   }
 
-  if (bucketUid.length > 100 || fileUid.length > 100) {
+  if (resource.length > 100) {
     return false;
   }
 
@@ -45,4 +42,13 @@ export function isValidScanStatus(status: string): boolean {
 // return list of statuses in string
 export function listOfStatuses(): string {
   return validScanStatuses.join(', ');
+}
+
+//function which splits array into chunks of size n
+export function chunkArray<T>(arr: T[], n: number): T[][] {
+  const chunks = [];
+  for (let i = 0; i < arr.length; i += n) {
+    chunks.push(arr.slice(i, i + n));
+  }
+  return chunks;
 }
