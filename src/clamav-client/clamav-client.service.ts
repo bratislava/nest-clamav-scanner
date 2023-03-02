@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as clamd from 'clamdjs';
 import { execSync } from 'child_process';
+import { Readable as ReadableStream } from 'stream';
 
 @Injectable()
 export class ClamavClientService {
@@ -19,37 +20,46 @@ export class ClamavClientService {
     );
   }
 
-  scanStream(readStream: object): any {
+  scanStream(readStream: ReadableStream): any {
     //scan stream with timeout 20 minutes
     return this.scanner.scanStream(readStream, 60000 * 20);
   }
 
   //function which gets clam reply
   getScanStatus(result: string): string {
-    switch (true) {
-      case result.includes('OK') && !result.includes('FOUND'):
-        return 'SAFE';
-      case result.includes('FOUND') && !result.includes('OK'):
-        return 'INFECTED';
-      default:
-        return 'SCAN ERROR';
+    /* switch (true) {
+                           case result.includes('OK') && !result.includes('FOUND'):
+                             return 'SAFE';
+                           case result.includes('FOUND') && !result.includes('OK'):
+                             return 'INFECTED';
+                           default:
+                             return 'SCAN ERROR';
+                         }*/
+
+    if (result.includes('OK') && !result.includes('FOUND')) {
+      return 'SAFE';
     }
+    if (result.includes('FOUND') && !result.includes('OK')) {
+      return 'INFECTED';
+    }
+    return 'SCAN ERROR';
   }
 
   //create function which checks if clamav scanner is running
   async isRunning(): Promise<boolean> {
     try {
       this.logger.debug('Checking if clamav is running...');
-      const cmd = `echo PING | nc -w 3 ${this.configService.get(
+      const cmd = `echo PING | nc -w 5 ${this.configService.get(
         'CLAMAV_HOST',
       )} ${this.configService.get('CLAMAV_PORT')}`;
       const response = execSync(cmd, { encoding: 'utf8' });
+      this.logger.debug(`Clamav running response: ${response}`);
       const result = response.trim() === 'PONG';
 
       this.logger.debug(`Clamav running result: ${result}`);
-      return true;
+      return result;
     } catch (error) {
-      this.logger.debug(`Clamav running result: ${error}`);
+      this.logger.debug(`Clamav running error: ${error}`);
       return false;
     }
   }

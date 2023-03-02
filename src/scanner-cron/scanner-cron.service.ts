@@ -40,7 +40,7 @@ export class ScannerCronService {
     //check if cron is already running
     this.logger.log('CronScan waking up...');
     if (global.CronRunning) {
-      this.logger.error(
+      this.logger.log(
         'CronScan another process is already running. Sleeping...',
       );
       return;
@@ -60,6 +60,7 @@ export class ScannerCronService {
     await this.mainScanBatchProcess();
     this.logger.log('CronScan sleeping...');
     global.CronRunning = false;
+    return;
   }
 
   async mainScanBatchProcess(): Promise<any> {
@@ -110,7 +111,7 @@ export class ScannerCronService {
     this.logger.log(`All batches scanned. Sleeping.`);
   }
 
-  async scanFileProcess(file: Files): Promise<boolean> {
+  async scanFileProcess(file: Files): Promise<string> {
     try {
       await this.updateScanStatus(file.id, 'SCANNING');
     } catch (error) {
@@ -129,7 +130,7 @@ export class ScannerCronService {
       await this.updateScanStatus(file.id, 'NOT FOUND');
 
       this.logger.error(`${file.fileUid} not found in minio bucket.`);
-      return false;
+      return 'NOT FOUND';
     }
     this.logger.debug(`${file.fileUid} is in Minio`);
 
@@ -138,14 +139,14 @@ export class ScannerCronService {
     try {
       scanStatus = await this.scanFileInClamav(file, fileStream);
     } catch (error) {
-      await this.updateScanStatus(file.id, 'SCAN ERROR');
-
-      throw new PreconditionFailedException(
-        `${file.fileUid} could not be scanned.`,
+      this.logger.error(
+        `${file.fileUid} could not be scanned. Error: ${error}`,
       );
+      await this.updateScanStatus(file.id, 'SCAN ERROR');
+      return 'SCAN ERROR';
     }
 
-    //move file to safe or infected bucket
+    //move file to safe or infected bucket if scan status is SAFE or INFECTED
     if (scanStatus.includes('SAFE', 'INFECTED')) {
       try {
         const destinationBucket = this.configService.get(
@@ -174,6 +175,7 @@ export class ScannerCronService {
         `${file.fileUid} could not be updated to ${scanStatus} status.`,
       );
     }
+
     return scanStatus;
   }
 
@@ -182,13 +184,16 @@ export class ScannerCronService {
     fileStream: ReadableStream,
   ): Promise<string> {
     const startTime = Date.now();
-    this.logger.debug(`${file.fileUid} scanning started at time: ${startTime}`);
+    this.logger.debug(`${file.fileUid} scanning started`);
     let response;
     try {
       response = await this.clamavClientService.scanStream(fileStream);
+
       this.logger.debug(
         `${file.fileUid} scanning response from clamav: ${response}`,
       );
+    } catch (error) {
+      this.logger.debug(error);
     } finally {
       //stream is destroyed in all situations to prevent any resource leaks.
       fileStream.destroy();
@@ -199,7 +204,7 @@ export class ScannerCronService {
       `${file.fileUid} was scanned in: ${scanDuration}ms with result: ${result}`,
     );
 
-    return this.clamavClientService.getScanStatus(result);
+    return result;
   }
 
   async updateScanStatusBatch(files: Files[], to: string): Promise<boolean> {
