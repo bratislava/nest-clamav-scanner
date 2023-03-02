@@ -33,6 +33,7 @@ spec:
           envFrom:
             - secretRef:
                 name: ${BUILD_REPOSITORY_NAME}-database-secret
+
   # Volume Claim
   volumeClaimTemplates:
     - metadata:
