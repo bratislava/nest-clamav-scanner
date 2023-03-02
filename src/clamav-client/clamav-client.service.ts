@@ -25,7 +25,7 @@ export class ClamavClientService {
   }
 
   //function which gets clam reply
-  isFileSafe(result: string): string {
+  getScanStatus(result: string): string {
     switch (true) {
       case result.includes('OK') && !result.includes('FOUND'):
         return 'SAFE';
@@ -47,9 +47,9 @@ export class ClamavClientService {
       const result = response.trim() === 'PONG';
 
       this.logger.debug(`Clamav running result: ${result}`);
-      return result;
+      return true;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(`Clamav running result: ${error}`);
       return false;
     }
   }

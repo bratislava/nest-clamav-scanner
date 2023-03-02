@@ -15,6 +15,7 @@ import { MinioClientService } from '../minio-client/minio-client.service';
 import { ConfigService } from '@nestjs/config';
 import { Files } from '@prisma/client';
 import { Readable as ReadableStream } from 'stream';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class ScannerCronService {
@@ -30,6 +31,11 @@ export class ScannerCronService {
     this.clamavClientService = new ClamavClientService(configService);
   }
 
+  //set cron service every 20 seconds
+  @Cron('*/20 * * * * *', {
+    name: 'cronStart',
+    timeZone: 'Europe/Berlin',
+  })
   async cronStart(): Promise<void> {
     //check if cron is already running
     this.logger.log('CronScan waking up...');
@@ -44,6 +50,7 @@ export class ScannerCronService {
     //check if clamav is running
     const clamavRunning = await this.clamavClientService.isRunning();
     if (!clamavRunning) {
+      global.CronRunning = false;
       throw new PreconditionFailedException('Clamav is not running.');
     }
 
@@ -186,13 +193,13 @@ export class ScannerCronService {
       //stream is destroyed in all situations to prevent any resource leaks.
       fileStream.destroy();
     }
-    const result = this.clamavClientService.isFileSafe(response);
+    const result = this.clamavClientService.getScanStatus(response);
     const scanDuration = Date.now() - startTime;
     this.logger.log(
       `${file.fileUid} was scanned in: ${scanDuration}ms with result: ${result}`,
     );
 
-    return this.clamavClientService.isFileSafe(result);
+    return this.clamavClientService.getScanStatus(result);
   }
 
   async updateScanStatusBatch(files: Files[], to: string): Promise<boolean> {
