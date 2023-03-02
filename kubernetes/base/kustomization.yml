@@ -7,14 +7,6 @@ resources:
 configurations:
   - configuration.yml
 
-# Keep as is
-commonLabels:
-  app: ${BUILD_REPOSITORY_NAME}
-  source: ${BUILD_REPOSITORY_NAME}
-
-generatorOptions:
-  disableNameSuffixHash: true
-
 # Add composite env vars from secrets
 patches:
   - target:
@@ -24,10 +16,16 @@ patches:
       - op: add
         path: /spec/template/spec/containers/0/env
         value:
-          - name: DATABASE_URL
-            value: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@${BUILD_REPOSITORY_NAME}-database:5432/$(POSTGRES_DB)?schema=public
+        - name: DATABASE_URL
+          value: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@${BUILD_REPOSITORY_NAME}-database:5432/$(POSTGRES_DB)?schema=public
 
+# Keep as is
+commonLabels:
+  app: ${BUILD_REPOSITORY_NAME}
+  source: ${BUILD_REPOSITORY_NAME}
 
+generatorOptions:
+  disableNameSuffixHash: true
 
 configMapGenerator:
   - name: ${BUILD_REPOSITORY_NAME}-env
