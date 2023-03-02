@@ -127,9 +127,9 @@ export class ScannerCronService {
     this.logger.debug(`${file.fileUid} is in Minio`);
 
     //scan file in clamav
-    let isSafe;
+    let scanStatus;
     try {
-      isSafe = await this.scanFileInClamav(file, fileStream);
+      scanStatus = await this.scanFileInClamav(file, fileStream);
     } catch (error) {
       await this.updateScanStatus(file.id, 'SCAN ERROR');
 
@@ -138,25 +138,25 @@ export class ScannerCronService {
       );
     }
 
-    const scanStatus = isSafe ? 'SAFE' : 'INFECTED';
-
     //move file to safe or infected bucket
-    try {
-      const destinationBucket = this.configService.get(
-        `CLAMAV_${scanStatus}_BUCKET`,
-      );
-      await this.minioClientService.moveFileBetweenBuckets(
-        file.bucketUid,
-        file.fileUid,
-        destinationBucket,
-        file.fileUid,
-      );
-    } catch (error) {
-      await this.updateScanStatus(file.id, 'MOVE ERROR');
+    if (scanStatus.includes('SAFE', 'INFECTED')) {
+      try {
+        const destinationBucket = this.configService.get(
+          `CLAMAV_${scanStatus}_BUCKET`,
+        );
+        await this.minioClientService.moveFileBetweenBuckets(
+          file.bucketUid,
+          file.fileUid,
+          destinationBucket,
+          file.fileUid,
+        );
+      } catch (error) {
+        await this.updateScanStatus(file.id, 'MOVE ERROR');
 
-      throw new PreconditionFailedException(
-        `${file.fileUid} could not be moved to ${scanStatus} bucket.`,
-      );
+        throw new PreconditionFailedException(
+          `${file.fileUid} could not be moved to ${scanStatus} bucket.`,
+        );
+      }
     }
 
     //update scan status of file
@@ -167,13 +167,13 @@ export class ScannerCronService {
         `${file.fileUid} could not be updated to ${scanStatus} status.`,
       );
     }
-    return isSafe;
+    return scanStatus;
   }
 
   async scanFileInClamav(
     file: Files,
     fileStream: ReadableStream,
-  ): Promise<boolean> {
+  ): Promise<string> {
     const startTime = Date.now();
     this.logger.debug(`${file.fileUid} scanning started at time: ${startTime}`);
     let response;
@@ -186,12 +186,13 @@ export class ScannerCronService {
       //stream is destroyed in all situations to prevent any resource leaks.
       fileStream.destroy();
     }
-    const result = await this.clamavClientService.isFileSafe(response);
+    const result = this.clamavClientService.isFileSafe(response);
     const scanDuration = Date.now() - startTime;
     this.logger.log(
       `${file.fileUid} was scanned in: ${scanDuration}ms with result: ${result}`,
     );
-    return result;
+
+    return this.clamavClientService.isFileSafe(result);
   }
 
   async updateScanStatusBatch(files: Files[], to: string): Promise<boolean> {

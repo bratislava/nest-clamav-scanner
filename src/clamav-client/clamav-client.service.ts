@@ -25,8 +25,15 @@ export class ClamavClientService {
   }
 
   //function which gets clam reply
-  async isFileSafe(result: any): Promise<boolean> {
-    return await clamd.isCleanReply(result);
+  isFileSafe(result: string): string {
+    switch (true) {
+      case result.includes('OK') && !result.includes('FOUND'):
+        return 'SAFE';
+      case result.includes('FOUND') && !result.includes('OK'):
+        return 'INFECTED';
+      default:
+        return 'SCAN ERROR';
+    }
   }
 
   //create function which checks if clamav scanner is running

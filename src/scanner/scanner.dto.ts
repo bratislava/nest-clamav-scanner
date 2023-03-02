@@ -1,4 +1,5 @@
-import {ApiProperty} from '@nestjs/swagger'; //dto for bucket file with file id and bucket id as optional. Add swagger documentation.
+import {ApiProperty} from '@nestjs/swagger';
+import {IsEnum, IsNumber, IsOptional, IsString} from 'class-validator'; //dto for bucket file with file id and bucket id as optional. Add swagger documentation.
 
 //dto for bucket file with file id and bucket id as optional. Add swagger documentation.
 export class ScanFileDto {
@@ -29,44 +30,69 @@ export class ScanStatusDto {
     description: 'uid/name of the file',
     example: 'ffsdfsd89796',
   })
+  @IsString()
   fileUid: string;
 
   @ApiProperty({
     description: 'uid of the bucket',
     example: 'ffsdfsd89796',
   })
+  @IsString()
   bucketUid: string;
 
   @ApiProperty({
     description: 'uid of the user',
     example: 'ffsdfsd89796',
   })
+  @IsString()
+  @IsOptional()
   userUid?: string;
 
   @ApiProperty({
     description: 'File size in bytes',
     example: '123131',
   })
+  @IsNumber()
   fileSize: number;
 
   @ApiProperty({
     description: 'File mime type of file',
     example: 'application/pdf',
   })
+  @IsString()
   fileMimeType: string;
 
-  //api property for scan status as enum NEW, QUEUE, SCANNING, DONE, ERROR
   @ApiProperty({
     description: 'scan result',
-    enum: ['ACCEPTED', 'QUEUE', 'SCANNING', 'INFECTED', 'SAFE', 'ERROR'],
+    enum: [
+      'ACCEPTED',
+      'QUEUE',
+      'SCANNING',
+      'INFECTED',
+      'SAFE',
+      'NOT FOUND',
+      'MOVE ERROR',
+      'SCAN ERROR',
+    ],
     example: 'ACCEPTED',
   })
+  @IsEnum([
+    'ACCEPTED',
+    'QUEUE',
+    'SCANNING',
+    'INFECTED',
+    'SAFE',
+    'NOT FOUND',
+    'MOVE ERROR',
+    'SCAN ERROR',
+  ])
   status: string;
 
   @ApiProperty({
     description: 'other meta data',
     example: '{ "type": "TIE Fighter"}',
   })
+  @IsOptional()
   meta?: any;
 
   //api property for created at
@@ -90,12 +116,14 @@ export class ScanFileResponseDto {
     enum: ['ACCEPTED', 'ERROR'],
     example: 'ACCEPTED',
   })
+  @IsEnum(['ACCEPTED', 'ERROR'])
   status: string;
 
   @ApiProperty({
     description: 'more info',
     example: 'file is queued for scanning',
   })
+  @IsString()
   message: string;
 
   //id of the record in db
@@ -103,5 +131,6 @@ export class ScanFileResponseDto {
     description: 'id of the record in db',
     example: 'd81d6e01-8196-45a1-bce2-e02877d9fbd8',
   })
+  @IsString()
   id: string;
 }
