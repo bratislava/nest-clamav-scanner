@@ -55,7 +55,14 @@ export class ScannerCronService {
     }
 
     //check if we have some stacked files when process was stopped and fix them
-    await this.fixStackedFiles();
+    try {
+      await this.fixStackedFiles();
+    } catch (error) {
+      global.CronRunning = false;
+      throw new PreconditionFailedException(
+        'Unable to fix stacked files. Error: ' + error,
+      );
+    }
 
     await this.mainScanBatchProcess();
     this.logger.log('CronScan sleeping...');

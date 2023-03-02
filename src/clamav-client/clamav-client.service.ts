@@ -27,15 +27,6 @@ export class ClamavClientService {
 
   //function which gets clam reply
   getScanStatus(result: string): string {
-    /* switch (true) {
-                           case result.includes('OK') && !result.includes('FOUND'):
-                             return 'SAFE';
-                           case result.includes('FOUND') && !result.includes('OK'):
-                             return 'INFECTED';
-                           default:
-                             return 'SCAN ERROR';
-                         }*/
-
     if (result.includes('OK') && !result.includes('FOUND')) {
       return 'SAFE';
     }
@@ -49,11 +40,11 @@ export class ClamavClientService {
   async isRunning(): Promise<boolean> {
     try {
       this.logger.debug('Checking if clamav is running...');
-      const cmd = `echo PING | nc -w 5 ${this.configService.get(
+      const cmd = `echo PING | nc -w 3 ${this.configService.get(
         'CLAMAV_HOST',
       )} ${this.configService.get('CLAMAV_PORT')}`;
       const response = execSync(cmd, { encoding: 'utf8' });
-      this.logger.debug(`Clamav running response: ${response}`);
+      this.logger.debug(`Clamav running response: ${response.trim()}`);
       const result = response.trim() === 'PONG';
 
       this.logger.debug(`Clamav running result: ${result}`);
