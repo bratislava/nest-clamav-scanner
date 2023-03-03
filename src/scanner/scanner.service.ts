@@ -69,9 +69,10 @@ export class ScannerService {
       );
     }
 
-    if (fileInfo.size > this.configService.get('MAX_FILE_SIZE')) {
+    const MAX_FILE_SIZE = this.configService.get('MAX_FILE_SIZE');
+    if (fileInfo.size > MAX_FILE_SIZE) {
       throw new PayloadTooLargeException(
-        'File size exceeds the maximum allowed size. Please check the file size.',
+        `File size (${fileInfo.size}) exceeds the maximum allowed size (${MAX_FILE_SIZE}). Please check the file size.`,
       );
     }
 
