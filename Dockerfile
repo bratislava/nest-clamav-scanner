@@ -35,7 +35,7 @@ CMD [ "npm", "run", "start:debug" ]
 # production
 FROM node:16.10.0 AS prod
 
-RUN apt-get update && apt-get install netcat
+RUN apt-get update && apt-get install netcat -y
 
 USER node
 
