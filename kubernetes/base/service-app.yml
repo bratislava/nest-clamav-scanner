@@ -10,6 +10,7 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: ${INTERNAL_APP_PORT}
+      name: http
   selector:
     service: app
 

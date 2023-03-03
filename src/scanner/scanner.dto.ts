@@ -7,12 +7,16 @@ export class ScanFileDto {
     description: 'uid/name of the file ',
     example: 'ffsdfsd89796.pdf',
   })
+  @IsString()
   fileUid: string;
 
   @ApiProperty({
-    description: 'uid/name of the bucket',
+    description:
+      'uid/name of the bucket. If not set, default bucket will be used',
     example: 'super-bucket',
   })
+  @IsString()
+  @IsOptional()
   bucketUid?: string;
 
   // optional property for user id
@@ -21,6 +25,8 @@ export class ScanFileDto {
       'uid/name of the user which will be saved together with the file to db',
     example: 'super-user',
   })
+  @IsString()
+  @IsOptional()
   userUid?: string;
 }
 
