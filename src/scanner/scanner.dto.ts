@@ -125,18 +125,26 @@ export class ScanFileResponseDto {
   @IsEnum(['ACCEPTED', 'ERROR'])
   status: string;
 
-  @ApiProperty({
-    description: 'more info',
-    example: 'file is queued for scanning',
-  })
-  @IsString()
-  message: string;
-
   //id of the record in db
   @ApiProperty({
     description: 'id of the record in db',
     example: 'd81d6e01-8196-45a1-bce2-e02877d9fbd8',
   })
   @IsString()
+  @IsOptional()
   id: string;
+
+  @ApiProperty({
+    description: 'File Uid',
+    example: 'file name or file uid.pdf',
+  })
+  @IsString()
+  fileUid: string;
+
+  @ApiProperty({
+    description: 'more info',
+    example: 'file is queued for scanning',
+  })
+  @IsString()
+  message: string;
 }

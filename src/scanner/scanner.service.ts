@@ -29,76 +29,125 @@ export class ScannerService {
   }
 
   public async scanFile(bucketFile: ScanFileDto): Promise<ScanFileResponseDto> {
-    if (!isValid(bucketFile.fileUid)) {
-      throw new BadRequestException('Please provide a valid fileUid.');
-    }
+    {
+      if (!isValid(bucketFile.fileUid)) {
+        throw new BadRequestException('Please provide a valid fileUid.');
+      }
 
-    if (!isValid(bucketFile.bucketUid)) {
-      bucketFile.bucketUid = this.configService.get('CLAMAV_UNSCANNED_BUCKET');
-    }
+      if (!isValid(bucketFile.bucketUid)) {
+        bucketFile.bucketUid = this.configService.get(
+          'CLAMAV_UNSCANNED_BUCKET',
+        );
+      }
 
-    //check if file has already been scanned - record is in database
-    const fileStatus = await this.prismaService.files.findFirst({
-      where: {
-        AND: [
-          { bucketUid: bucketFile.bucketUid },
-          { fileUid: bucketFile.fileUid },
-        ],
-      },
-    });
-
-    if (fileStatus) {
-      //base64 bucketUid and fileUid
-      const bucketUid64 = Buffer.from(bucketFile.bucketUid).toString('base64');
-      const fileUid64 = Buffer.from(bucketFile.fileUid).toString('base64');
-
-      throw new GoneException(
-        `This file has already been submitted for scanning. Please check the status of the scan by GET /api/scan/${fileUid64}/${bucketUid64} or by GET /api/scan/${fileStatus.id}`,
-      );
-    }
-
-    //check if file exists in minio
-    const fileInfo = await this.minioClientService.fileExists(
-      bucketFile.bucketUid,
-      bucketFile.fileUid,
-    );
-
-    if (!fileInfo) {
-      throw new NotFoundException(
-        `This file does not exist in the bucket '${bucketFile.bucketUid}'. Please check if the bucketUid or fileUid is correct.`,
-      );
-    }
-
-    const MAX_FILE_SIZE = this.configService.get('MAX_FILE_SIZE');
-    if (fileInfo.size > MAX_FILE_SIZE) {
-      throw new PayloadTooLargeException(
-        `File size (${fileInfo.size}) exceeds the maximum allowed size (${MAX_FILE_SIZE}). Please check the file size.`,
-      );
-    }
-
-    try {
-      const result = await this.prismaService.files.create({
-        data: {
-          bucketUid: bucketFile.bucketUid,
-          fileUid: bucketFile.fileUid,
-          userUid: bucketFile.userUid,
-          fileSize: fileInfo.size,
-          fileMimeType: fileInfo.metaData['content-type'],
-          status: 'ACCEPTED',
+      //check if file has already been scanned - record is in database
+      const fileStatus = await this.prismaService.files.findFirst({
+        where: {
+          AND: [
+            { bucketUid: bucketFile.bucketUid },
+            { fileUid: bucketFile.fileUid },
+          ],
         },
       });
 
-      return {
-        status: 'ACCEPTED',
-        message: `File: ${bucketFile.fileUid} has been successfully accepted for scanning.`,
-        id: result.id,
-      };
-    } catch (error) {
-      this.logger.error(error);
-      throw new UnprocessableEntityException(
-        `There was an error while saving the file to the database. Please try again later.`,
+      if (fileStatus) {
+        //base64 bucketUid and fileUid
+        const bucketUid64 = Buffer.from(bucketFile.bucketUid).toString(
+          'base64',
+        );
+        const fileUid64 = Buffer.from(bucketFile.fileUid).toString('base64');
+
+        throw new GoneException(
+          `This file has already been submitted for scanning. Please check the status of the scan by GET /api/scan/${fileUid64}/${bucketUid64} or by GET /api/scan/${fileStatus.id}`,
+        );
+      }
+
+      //check if file exists in minio
+      const fileInfo = await this.minioClientService.fileExists(
+        bucketFile.bucketUid,
+        bucketFile.fileUid,
+      );
+
+      if (!fileInfo) {
+        throw new NotFoundException(
+          `This file does not exist in the bucket '${bucketFile.bucketUid}'. Please check if the bucketUid or fileUid is correct.`,
+        );
+      }
+
+      const MAX_FILE_SIZE = this.configService.get('MAX_FILE_SIZE');
+      if (fileInfo.size > MAX_FILE_SIZE) {
+        throw new PayloadTooLargeException(
+          `File size (${fileInfo.size}) exceeds the maximum allowed size (${MAX_FILE_SIZE}). Please check the file size.`,
+        );
+      }
+
+      try {
+        const result = await this.prismaService.files.create({
+          data: {
+            bucketUid: bucketFile.bucketUid,
+            fileUid: bucketFile.fileUid,
+            userUid: bucketFile.userUid,
+            fileSize: fileInfo.size,
+            fileMimeType: fileInfo.metaData['content-type'],
+            status: 'ACCEPTED',
+          },
+        });
+
+        return {
+          status: 'ACCEPTED',
+          id: result.id,
+          fileUid: bucketFile.fileUid,
+          message: `File: ${bucketFile.fileUid} has been successfully accepted for scanning.`,
+        };
+      } catch (error) {
+        this.logger.error(error);
+        throw new UnprocessableEntityException(
+          `There was an error while saving the file to the database. Please try again later.`,
+        );
+      }
+    }
+  }
+
+  public async scanFiles(
+    bucketFiles: ScanFileDto[],
+  ): Promise<ScanFileResponseDto[]> {
+    //check if bucketFiles is an array
+    if (!Array.isArray(bucketFiles)) {
+      throw new BadRequestException('Please provide an array of files!');
+    }
+
+    //check if bucketFiles array is empty
+    if (bucketFiles.length === 0) {
+      throw new BadRequestException('Please provide at least one file!');
+    }
+
+    //check if bucketFiles array contains more than 20 files
+    if (bucketFiles.length > this.configService.get('MAX_FILES_PER_REQUEST')) {
+      throw new PayloadTooLargeException(
+        'Please provide a maximum of 20 files!',
       );
     }
+
+    const scanFileResponseDto: ScanFileResponseDto[] = [];
+
+    //loop through bucketFiles array bucketFiles of files
+    for (const bucketFile of bucketFiles) {
+      //check naming convention of fileUid
+      let result: ScanFileResponseDto;
+      try {
+        result = await this.scanFile(bucketFile);
+      } catch (error) {
+        result = {
+          status: error.name,
+          fileUid: bucketFile.fileUid,
+          id: null,
+          message: error.message,
+        };
+      }
+      scanFileResponseDto.push(result);
+    }
+
+    return scanFileResponseDto;
   }
 
   //function which returns scanner status by fileUid from prisma
