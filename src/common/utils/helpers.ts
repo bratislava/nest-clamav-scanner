@@ -7,7 +7,8 @@ const validScanStatuses = [
   'SAFE',
   'INFECTED',
   'NOT FOUND',
-  'MOVE ERROR',
+  'MOVE ERROR SAFE',
+  'MOVE ERROR INFECTED',
   'SCAN ERROR',
 ];
 

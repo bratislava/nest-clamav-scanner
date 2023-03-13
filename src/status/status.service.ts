@@ -4,19 +4,20 @@ import { MinioClientService } from '../minio-client/minio-client.service';
 import { ClamavClientService } from '../clamav-client/clamav-client.service';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { FormsClientService } from '../forms-client/forms-client.service';
 
 @Injectable()
 export class StatusService {
-  private clamavClientService: ClamavClientService;
   private readonly logger: Logger;
 
   constructor(
     private readonly configService: ConfigService,
     private minioClientService: MinioClientService,
     private readonly prismaService: PrismaService,
+    private readonly formsClientService: FormsClientService,
+    private clamavClientService: ClamavClientService,
   ) {
     this.logger = new Logger('StatusService');
-    this.clamavClientService = new ClamavClientService(configService);
   }
 
   //function which checks if prisma is running
@@ -25,6 +26,22 @@ export class StatusService {
       const result = await this.prismaService.isRunning();
       return {
         running: result,
+      };
+    } catch (error) {
+      this.logger.error(error);
+      return {
+        running: false,
+      };
+    }
+  }
+
+  //function which checks if forms is running
+  public async isFormsRunning(): Promise<ServiceRunningDto> {
+    try {
+      const result = await this.formsClientService.isRunning();
+      this.logger.log(result);
+      return {
+        running: true,
       };
     } catch (error) {
       this.logger.error(error);

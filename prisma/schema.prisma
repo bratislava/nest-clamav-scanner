@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native"]
 }
 
@@ -12,19 +12,17 @@ datasource db {
 }
 
 model Files {
-  id            String  @id @default(uuid())
-  fileUid       String
-  bucketUid     String
-  userUid       String?
-  fileSize      Int
-  fileMimeType  String
-  status        String @default("ACCEPTED")
-  meta          Json?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String   @id @default(uuid())
+  fileUid      String
+  bucketUid    String
+  userUid      String?
+  fileSize     Int
+  fileMimeType String
+  status       String   @default("ACCEPTED")
+  notified     Boolean  @default(false)
+  meta         Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  @@index([fileUid, bucketUid, userUid, fileSize, status])
+  @@index([fileUid, bucketUid, userUid, fileSize, status, notified])
 }
-
-
-

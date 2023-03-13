@@ -28,6 +28,16 @@ export class StatusController {
     return this.statusService.isMinioRunning();
   }
 
+  //endpoint to check if forms backend is running
+  @ApiOperation({
+    summary: 'Check forms backend status',
+    description: 'This endpoint checks if forms backend is running',
+  })
+  @Get('forms')
+  isFormsRunning(): Promise<ServiceRunningDto> {
+    return this.statusService.isFormsRunning();
+  }
+
   //endpoint to check if clamav is running
   @ApiOperation({
     summary: 'Check clamav status',

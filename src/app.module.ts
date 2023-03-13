@@ -9,6 +9,7 @@ import { MinioClientModule } from './minio-client/minio-client.module';
 import { ClamavClientModule } from './clamav-client/clamav-client.module';
 import { ScannerCronModule } from './scanner-cron/scanner-cron.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { FormsClientModule } from './forms-client/forms-client.module';
 
 @Module({
   controllers: [AppController],
@@ -22,6 +23,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ClamavClientModule,
     ScheduleModule.forRoot(),
     ScannerCronModule,
+    FormsClientModule,
   ],
 })
 export class AppModule {}

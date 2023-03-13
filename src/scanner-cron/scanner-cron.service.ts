@@ -16,20 +16,20 @@ import { ConfigService } from '@nestjs/config';
 import { Files } from '@prisma/client';
 import { Readable as ReadableStream } from 'stream';
 import { Cron } from '@nestjs/schedule';
+import { FormsClientService } from '../forms-client/forms-client.service';
 
 @Injectable()
 export class ScannerCronService {
   private readonly logger = new Logger('ScannerCronService');
-  private readonly clamavClientService: ClamavClientService;
 
   constructor(
     private scannerService: ScannerService,
     private minioClientService: MinioClientService,
     private readonly prismaService: PrismaService,
     private readonly configService: ConfigService,
-  ) {
-    this.clamavClientService = new ClamavClientService(configService);
-  }
+    private readonly clamavClientService: ClamavClientService,
+    private readonly formsClientService: FormsClientService,
+  ) {}
 
   //set cron service every 20 seconds
   @Cron('*/20 * * * * *', {
@@ -51,7 +51,28 @@ export class ScannerCronService {
     const clamavRunning = await this.clamavClientService.isRunning();
     if (!clamavRunning) {
       global.CronRunning = false;
-      throw new PreconditionFailedException('Clamav is not running.');
+      throw new PreconditionFailedException(
+        'Clamav is not running. Sleeping...',
+      );
+    }
+
+    //check if forms is running
+    const formsRunning = await this.formsClientService.isRunning();
+    if (!formsRunning) {
+      global.formsRunning = false;
+    }
+
+    //check if we have some files which where not notified to forms client. If yes, try to notify them.
+    if (global.formsRunning) {
+      try {
+        await this.fixUnnotifiedFiles();
+      } catch (error) {
+        global.CronRunning = false;
+        throw new PreconditionFailedException(
+          'Unable to send statuses of unnotified files. Sleeping. Error: ' +
+            error,
+        );
+      }
     }
 
     //check if we have some stacked files when process was stopped and fix them
@@ -102,6 +123,8 @@ export class ScannerCronService {
     for (const files of filesBatches) {
       this.logger.debug(`Scanning ${j}. batch of ${files.length} files.`);
 
+      global.formsRunning = await this.formsClientService.isRunning();
+
       const promiseQueue = [];
       for (const file of files) {
         promiseQueue.push(this.scanFileProcess(file));
@@ -114,13 +137,12 @@ export class ScannerCronService {
       );
       j++;
     }
-
     this.logger.log(`All batches scanned. Sleeping.`);
   }
 
   async scanFileProcess(file: Files): Promise<string> {
     try {
-      await this.updateScanStatus(file.id, 'SCANNING');
+      await this.updateScanStatusWithNotify(file.id, 'SCANNING');
     } catch (error) {
       throw new PreconditionFailedException(
         `${file.fileUid} could not be updated to SCANNING status.`,
@@ -134,7 +156,7 @@ export class ScannerCronService {
         file.fileUid,
       );
     } catch (error) {
-      await this.updateScanStatus(file.id, 'NOT FOUND');
+      await this.updateScanStatusWithNotify(file.id, 'NOT FOUND');
 
       this.logger.error(`${file.fileUid} not found in minio bucket.`);
       return 'NOT FOUND';
@@ -149,7 +171,7 @@ export class ScannerCronService {
       this.logger.error(
         `${file.fileUid} could not be scanned. Error: ${error}`,
       );
-      await this.updateScanStatus(file.id, 'SCAN ERROR');
+      await this.updateScanStatusWithNotify(file.id, 'SCAN ERROR');
       return 'SCAN ERROR';
     }
 
@@ -166,7 +188,10 @@ export class ScannerCronService {
           file.fileUid,
         );
       } catch (error) {
-        await this.updateScanStatus(file.id, 'MOVE ERROR');
+        await this.updateScanStatusWithNotify(
+          file.id,
+          'MOVE ERROR' + scanStatus,
+        );
 
         throw new PreconditionFailedException(
           `${file.fileUid} could not be moved to ${scanStatus} bucket.`,
@@ -176,7 +201,7 @@ export class ScannerCronService {
 
     //update scan status of file
     try {
-      await this.updateScanStatus(file.id, scanStatus);
+      await this.updateScanStatusWithNotify(file.id, scanStatus);
     } catch (error) {
       throw new PreconditionFailedException(
         `${file.fileUid} could not be updated to ${scanStatus} status.`,
@@ -242,7 +267,7 @@ export class ScannerCronService {
     }
   }
 
-  async updateScanStatus(id: string, status: string): Promise<any> {
+  async updateScanStatusWithNotify(id: string, status: string): Promise<any> {
     if (!isValidScanStatus(status)) {
       throw new Error(
         'Please provide a valid scan status. Available options are:' +
@@ -250,15 +275,37 @@ export class ScannerCronService {
       );
     }
 
+    //if forms are running, update the status of the file
+    let notifiedStatus = false;
+
+    //if state is SAFE, INFECTED, MOVE ERROR INFECTED, MOVE ERROR SAFE or NOT FOUND, update the status of the file in forms
+    if (
+      global.formsRunning &&
+      [
+        'SAFE',
+        'INFECTED',
+        'NOT FOUND',
+        'MOVE ERROR SAFE',
+        'MOVE ERROR INFECTED',
+      ].includes(status)
+    ) {
+      notifiedStatus = await this.formsClientService.updateFileStatus(
+        id,
+        status,
+      );
+    }
+
     //update scan status of files which are in state ACCEPTED to new state which is QUEUE
     const updateScanStatus = await this.prismaService.files.update({
       data: {
         status: status,
+        notified: notifiedStatus,
       },
       where: {
         id: id,
       },
     });
+
     return updateScanStatus;
   }
 
@@ -300,5 +347,56 @@ export class ScannerCronService {
       );
     }
     return;
+  }
+
+  //fix unnotified files  which are in state SAFE, INFECTED, MOVE ERROR INFECTED, MOVE ERROR SAFE or NOT FOUND
+  async fixUnnotifiedFiles(): Promise<void> {
+    //get all files which are in state SAFE, INFECTED, MOVE ERROR INFECTED, MOVE ERROR SAFE or NOT FOUND
+    const unnotifiedFiles = await this.prismaService.files.findMany({
+      where: {
+        OR: [
+          {
+            status: 'SAFE',
+          },
+          {
+            status: 'INFECTED',
+          },
+          {
+            status: 'MOVE ERROR INFECTED',
+          },
+          {
+            status: 'MOVE ERROR SAFE',
+          },
+          {
+            status: 'NOT FOUND',
+          },
+        ],
+        notified: false,
+      },
+      take: 200,
+    });
+
+    //if no files are found, return
+    if (unnotifiedFiles.length === 0) {
+      this.logger.log(
+        'No unnotified files found. Every change was send to forms backend.',
+      );
+      return;
+    }
+
+    this.logger.log(
+      `Found ${unnotifiedFiles.length} unnotified files which were not notified to forms backend. Starting notification process.`,
+    );
+
+    //notify forms backend about the status of the files
+    for (const file of unnotifiedFiles) {
+      try {
+        await this.updateScanStatusWithNotify(file.id, file.status);
+      } catch (error) {
+        this.logger.error(
+          `Could not notify forms backend about file ${file.fileUid} with status ${file.status}.`,
+        );
+      }
+    }
   }
 }

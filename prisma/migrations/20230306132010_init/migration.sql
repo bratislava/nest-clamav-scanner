@@ -8,6 +8,7 @@ CREATE TABLE "Files"
     "fileSize"     INTEGER      NOT NULL,
     "fileMimeType" TEXT         NOT NULL,
     "status"       TEXT         NOT NULL DEFAULT 'ACCEPTED',
+    "notified"     BOOLEAN      NOT NULL DEFAULT false,
     "meta"         JSONB,
     "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt"    TIMESTAMP(3) NOT NULL,
@@ -16,4 +17,4 @@ CREATE TABLE "Files"
 );
 
 -- CreateIndex
-CREATE INDEX "Files_fileUid_bucketUid_userUid_fileSize_status_idx" ON "Files" ("fileUid", "bucketUid", "userUid", "fileSize", "status");
+CREATE INDEX "Files_fileUid_bucketUid_userUid_fileSize_status_notified_idx" ON "Files" ("fileUid", "bucketUid", "userUid", "fileSize", "status", "notified");
