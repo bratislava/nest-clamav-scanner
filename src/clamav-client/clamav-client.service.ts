@@ -33,6 +33,10 @@ export class ClamavClientService {
     if (result.includes('FOUND') && !result.includes('OK')) {
       return 'INFECTED';
     }
+    if (result.includes('SCAN TIMEOUT')) {
+      return 'SCAN TIMEOUT';
+    }
+
     return 'SCAN ERROR';
   }
 
@@ -47,7 +51,7 @@ export class ClamavClientService {
       this.logger.debug(`Clamav running response: ${response.trim()}`);
       const result = response.trim() === 'PONG';
 
-      this.logger.debug(`Clamav running result: ${result}`);
+      this.logger.debug(`Clamav result: ${result}`);
       return result;
     } catch (error) {
       this.logger.debug(`Clamav running error: ${error}`);

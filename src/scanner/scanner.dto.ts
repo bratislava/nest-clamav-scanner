@@ -72,25 +72,29 @@ export class ScanStatusDto {
     description: 'scan result',
     enum: [
       'ACCEPTED',
-      'QUEUE',
+      'QUEUED',
       'SCANNING',
-      'INFECTED',
       'SAFE',
+      'INFECTED',
       'NOT FOUND',
-      'MOVE ERROR',
+      'MOVE ERROR SAFE',
+      'MOVE ERROR INFECTED',
       'SCAN ERROR',
+      'SCAN TIMEOUT',
     ],
     example: 'ACCEPTED',
   })
   @IsEnum([
     'ACCEPTED',
-    'QUEUE',
+    'QUEUED',
     'SCANNING',
-    'INFECTED',
     'SAFE',
+    'INFECTED',
     'NOT FOUND',
-    'MOVE ERROR',
+    'MOVE ERROR SAFE',
+    'MOVE ERROR INFECTED',
     'SCAN ERROR',
+    'SCAN TIMEOUT',
   ])
   status: string;
 

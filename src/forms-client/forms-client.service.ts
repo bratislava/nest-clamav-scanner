@@ -43,7 +43,7 @@ export class FormsClientService {
       );
       return response.data;
     } catch (error) {
-      this.logger.error('FormsClientService.postFiles error: ' + error);
+      this.logger.error('Error while notifying forms backend: ' + error);
       return false;
     }
   }

@@ -13,13 +13,23 @@ datasource db {
 
 model Files {
   id           String   @id @default(uuid())
+  // file indentifier
   fileUid      String
+  // bucket indentifier
   bucketUid    String
+  // optional user indentifier
   userUid      String?
+  // file size from minio
   fileSize     Int
+  // file mime type
   fileMimeType String
+  // status of the scanner file
   status       String   @default("ACCEPTED")
+  // if the forms where notified about status change
   notified     Boolean  @default(false)
+  // number of times the file was scanned
+  runs         Int      @default(0)
+  // reserved for som other data
   meta         Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

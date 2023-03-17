@@ -9,6 +9,7 @@ CREATE TABLE "Files"
     "fileMimeType" TEXT         NOT NULL,
     "status"       TEXT         NOT NULL DEFAULT 'ACCEPTED',
     "notified"     BOOLEAN      NOT NULL DEFAULT false,
+    "runs"         INTEGER      NOT NULL DEFAULT 0,
     "meta"         JSONB,
     "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt"    TIMESTAMP(3) NOT NULL,
