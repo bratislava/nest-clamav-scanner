@@ -23,6 +23,7 @@ jobs:
       cluster: tkg-innov-dev
       url: https://tkg.dev.bratislava.sk
       debug: --debug
+      version: beta
     secrets:
       service-account: ${{ secrets.DEV_STANDALONE_TOKEN }}
       registry-pass: ${{ secrets.HARBOR_REGISTRY_PASSWORD }}
@@ -31,7 +32,7 @@ jobs:
   deploy-staging:
     name: Deploy to staging
     if: needs.conditions.outputs.staging == 'true'
-    needs: [conditions]
+    needs: [ conditions ]
     uses: bratislava/github-actions/.github/workflows/deploy-with-bratiska-cli.yml@stable
     with:
       directory: ./
@@ -47,7 +48,7 @@ jobs:
   deploy-prod:
     name: Deploy to prod
     if: needs.conditions.outputs.prod == 'true'
-    needs: [conditions]
+    needs: [ conditions ]
     uses: bratislava/github-actions/.github/workflows/deploy-with-bratiska-cli.yml@stable
     with:
       directory: ./
