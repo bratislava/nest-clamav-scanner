@@ -8,6 +8,27 @@ import { StatusService } from './status.service';
 export class StatusController {
   constructor(private readonly statusService: StatusService) {}
 
+  //endpoint to return status of all services
+  @ApiOperation({
+    summary: 'Check all services status',
+    description: 'This endpoint checks all services status',
+  })
+  @Get()
+  async status(): Promise<any> {
+    const prisma = await this.statusService.isPrismaRunning();
+    const minio = await this.statusService.isMinioRunning();
+    const forms = await this.statusService.isFormsRunning();
+    const clamav = await this.statusService.isClamavRunning();
+    const clamavVersion = await this.statusService.clamavVersion();
+    return {
+      prisma: prisma,
+      minio: minio,
+      forms: forms,
+      clamav: clamav,
+      clamavVersion: clamavVersion,
+    };
+  }
+
   //endpoint to check if prisma is running
   @ApiOperation({
     summary: 'Check prisma status',
