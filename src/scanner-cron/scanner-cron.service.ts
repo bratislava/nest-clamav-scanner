@@ -64,9 +64,10 @@ export class ScannerCronService {
     if (!formsRunning) {
       global.formsRunning = false;
       this.logger.error('Forms are not running!');
+    } else {
+      global.formsRunning = true;
+      this.logger.log('Forms are running...');
     }
-    global.formsRunning = true;
-    this.logger.log('Forms are running...');
 
     //check if we have some files which where not notified to forms client. If yes, try to notify them.
     if (global.formsRunning) {
