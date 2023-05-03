@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Param, Post} from '@nestjs/common';
+import { Body, Controller, Get, Logger, Param, Post } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -7,10 +7,10 @@ import {
   ApiOperation,
   ApiPayloadTooLargeResponse,
   ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
-import {ScannerService} from './scanner.service';
-import {ScanFileDto, ScanFileResponseDto, ScanStatusDto} from './scanner.dto';
+  ApiTags
+} from "@nestjs/swagger";
+import { ScannerService } from "./scanner.service";
+import { ScanFileDto, ScanFileResponseDto, ScanStatusDto } from "./scanner.dto";
 
 /*
   Endpoints
@@ -18,7 +18,11 @@ import {ScanFileDto, ScanFileResponseDto, ScanStatusDto} from './scanner.dto';
 @ApiTags('Scanner')
 @Controller('api/scan')
 export class ScannerController {
-  constructor(private readonly scannerService: ScannerService) {}
+  private readonly logger: Logger;
+
+  constructor(private readonly scannerService: ScannerService) {
+    this.logger = new Logger('ScannerController');
+  }
 
   //post controller which accepts bucket file dto and starts clamav scan. Add swagger documentation.
   @Post('files')
@@ -98,6 +102,7 @@ export class ScannerController {
   scanFiles(
     @Body() bucketFiles: ScanFileDto[],
   ): Promise<ScanFileResponseDto[]> {
+    this.logger.debug(`Scan files request: ${JSON.stringify(bucketFiles)}`);
     return this.scannerService.scanFiles(bucketFiles);
   }
 
@@ -133,6 +138,7 @@ export class ScannerController {
     description: 'File or bucket not found.',
   })
   scanFile(@Body() bucketFile: ScanFileDto): Promise<ScanFileResponseDto> {
+    this.logger.debug(`Scan file request: ${JSON.stringify(bucketFile)}`);
     return this.scannerService.scanFile(bucketFile);
   }
 
