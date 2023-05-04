@@ -91,12 +91,13 @@ export class ScannerController {
     },
   })
   @ApiResponse({
-    status: 202,"Files has been accepted for scanning."ted for scanning.',
-    type: SanFileResponseDto,
+    status: 202,
+    description: 'Files has been accepted for scanning.',
+    type: ScanFileResponseDto,
   })
   @ApiBadRequestResponse({
     status: 400,
-    description: "Wrong parameters provided."
+    description: 'Wrong parameters provided.',
   })
   @HttpCode(HttpStatus.ACCEPTED)
   scanFiles(
@@ -114,8 +115,8 @@ export class ScannerController {
   })
   @ApiResponse({
     status: 202,
-    description: "Files has been accepted for scanning.",
-    type: ScanFileResponseDto
+    description:"Files has been accepted for scanning."',
+    type: ScanFileResponseDt,
   })
   @ApiBadRequestResponse({
     status: 400,
