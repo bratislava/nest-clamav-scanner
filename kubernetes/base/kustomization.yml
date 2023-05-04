@@ -7,19 +7,6 @@ resources:
 configurations:
   - configuration.yml
 
-# Add composite env vars from secrets
-patches:
-  - target:
-      name: ${BUILD_REPOSITORY_NAME}-app
-      kind: Deployment
-    patch: |-
-      - op: add
-        path: /spec/template/spec/containers/0/env
-        value:
-          - name: DATABASE_URL
-            value: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@${BUILD_REPOSITORY_NAME}-database:5432/$(POSTGRES_DB)?schema=public
-
-
 # Keep as is
 commonLabels:
   app: ${BUILD_REPOSITORY_NAME}

@@ -30,6 +30,9 @@ spec:
             requests:
               cpu: 50m
               memory: 64Mi
+          env:
+            - name: DATABASE_URL
+              value: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@${BUILD_REPOSITORY_NAME}-database:5432/$(POSTGRES_DB)?schema=public
           envFrom:
             - configMapRef:
                 name: ${BUILD_REPOSITORY_NAME}-env
