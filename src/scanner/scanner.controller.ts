@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Param, Post } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -91,14 +91,14 @@ export class ScannerController {
     },
   })
   @ApiResponse({
-    status: 201,
-    description: 'Files has been accepted for scanning.',
-    type: ScanFileResponseDto,
+    status: 202,"Files has been accepted for scanning."ted for scanning.',
+    type: SanFileResponseDto,
   })
   @ApiBadRequestResponse({
     status: 400,
-    description: 'Wrong parameters provided.',
+    description: "Wrong parameters provided."
   })
+  @HttpCode(HttpStatus.ACCEPTED)
   scanFiles(
     @Body() bucketFiles: ScanFileDto[],
   ): Promise<ScanFileResponseDto[]> {
@@ -113,9 +113,9 @@ export class ScannerController {
       'You have to provide list of files which are already uploaded to bucket and you want to scan them. Service will return list of files with status saying that files where accepted for scanning. If not then proper error will be propagated.',
   })
   @ApiResponse({
-    status: 201,
-    description: 'Files has been accepted for scanning.',
-    type: ScanFileResponseDto,
+    status: 202,
+    description: "Files has been accepted for scanning.",
+    type: ScanFileResponseDto
   })
   @ApiBadRequestResponse({
     status: 400,
@@ -135,8 +135,9 @@ export class ScannerController {
   })
   @ApiNotFoundResponse({
     status: 404,
-    description: 'File or bucket not found.',
+    description: "File or bucket not found."
   })
+  @HttpCode(HttpStatus.ACCEPTED)
   scanFile(@Body() bucketFile: ScanFileDto): Promise<ScanFileResponseDto> {
     this.logger.debug(`Scan file request: ${JSON.stringify(bucketFile)}`);
     return this.scannerService.scanFile(bucketFile);
