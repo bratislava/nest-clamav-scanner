@@ -115,8 +115,8 @@ export class ScannerController {
   })
   @ApiResponse({
     status: 202,
-    description:"Files has been accepted for scanning."',
-    type: ScanFileResponseDt,
+    description: 'Files has been accepted for scanning.',
+    type: ScanFileResponseDto,
   })
   @ApiBadRequestResponse({
     status: 400,
@@ -136,7 +136,7 @@ export class ScannerController {
   })
   @ApiNotFoundResponse({
     status: 404,
-    description: "File or bucket not found."
+    description: 'File or bucket not found.',
   })
   @HttpCode(HttpStatus.ACCEPTED)
   scanFile(@Body() bucketFile: ScanFileDto): Promise<ScanFileResponseDto> {
