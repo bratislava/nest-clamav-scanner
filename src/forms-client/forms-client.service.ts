@@ -30,7 +30,8 @@ export class FormsClientService {
   //create function which will post array of files to forms client with axios and using forms client url NEST_FORMS_BACKEND with upadted statuses
   public async updateFileStatus(id: string, status: string): Promise<boolean> {
     try {
-      const url = this.configService.get('NEST_FORMS_BACKEND') + '/files/' + id;
+      const url =
+        this.configService.get('NEST_FORMS_BACKEND') + '/files/scan/' + id;
       const response = await axios.patch(
         url,
         {
