@@ -327,6 +327,9 @@ export class ScannerCronService {
             id: file.id,
           },
         });
+        this.logger.warn(
+          `File id: ${file.id} not existing in forms, setting up state to FILE ID NOT EXISTING IN FORMS. Please check the file in forms.`,
+        );
         notifiedStatus = false;
       } else {
         notifiedStatus = true;
