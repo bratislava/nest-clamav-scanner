@@ -42,9 +42,6 @@ export class FormsClientService {
           timeout: 2000,
         },
       );
-      this.logger.debug(
-        'FormsClientService.postFiles response.data: ' + response.data,
-      );
       return response;
     } catch (error) {
       if (error.response.status === 404) {
