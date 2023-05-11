@@ -28,11 +28,12 @@ export class FormsClientService {
   }
 
   //create function which will post array of files to forms client with axios and using forms client url NEST_FORMS_BACKEND with upadted statuses
-  public async updateFileStatus(id: string, status: string): Promise<boolean> {
+  public async updateFileStatus(id: string, status: string) {
+    let response;
     try {
       const url =
         this.configService.get('NEST_FORMS_BACKEND') + '/files/scan/' + id;
-      const response = await axios.patch(
+      response = await axios.patch(
         url,
         {
           status: status,
@@ -44,8 +45,18 @@ export class FormsClientService {
       this.logger.debug(
         'FormsClientService.postFiles response.data: ' + response.data,
       );
-      return response.data;
+      return response;
     } catch (error) {
+      if (error.response.status === 404) {
+        this.logger.error(
+          'File not found in forms backend. Removing from DB: ' + error,
+        );
+        if (response) {
+          return response;
+        } else {
+          return false;
+        }
+      }
       this.logger.error('Error while notifying forms backend: ' + error);
       return false;
     }

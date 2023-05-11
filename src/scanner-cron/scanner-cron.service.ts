@@ -309,10 +309,28 @@ export class ScannerCronService {
         'SCAN NOT SUCCESSFUL',
       ].includes(status)
     ) {
-      notifiedStatus = await this.formsClientService.updateFileStatus(
+      const response = await this.formsClientService.updateFileStatus(
         file.id,
         status,
       );
+
+      if (response === false) {
+        notifiedStatus = false;
+      }
+
+      if (response.status === 404) {
+        await this.prismaService.files.update({
+          data: {
+            status: 'FILE ID NOT EXISTING IN FORMS',
+          },
+          where: {
+            id: file.id,
+          },
+        });
+        notifiedStatus = false;
+      } else {
+        notifiedStatus = true;
+      }
     }
 
     let updateScanStatusDto: UpdateScanStatusDto = {
