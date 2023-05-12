@@ -17,9 +17,6 @@ export class FormsClientService {
       const response = await axios.get(url, {
         timeout: 2000,
       });
-      this.logger.debug(
-        'FormsClientService.healthCheck response.data: ' + response.data,
-      );
       return response.status === 200;
     } catch (error) {
       this.logger.error('FormsClientService.healthCheck error: ' + error);
