@@ -34,7 +34,7 @@ export function isValid(resource: any): boolean {
     return false;
   }
 
-  if (resource.length > 100) {
+  if (resource.length > 1000) {
     return false;
   }
 
