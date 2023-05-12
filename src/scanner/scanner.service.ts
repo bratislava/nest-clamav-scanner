@@ -70,7 +70,7 @@ export class ScannerService {
 
       if (!fileInfo) {
         throw new NotFoundException(
-          `This file does not exist in the bucket '${bucketFile.bucketUid}'. Please check if the bucketUid or fileUid is correct.`,
+          `This file: ${bucketFile.fileUid} does not exist in the bucket '${bucketFile.bucketUid}'. Please check if the bucketUid or fileUid is correct.`,
         );
       }
 
