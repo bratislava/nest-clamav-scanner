@@ -166,8 +166,6 @@ export class ScannerController {
     return this.scannerService.getStatus(bucketId64, fileId64);
   }
 
-"resourceId"
-eId') resourceId: sting,
   //get controller which returns status of scanned file by record id or by name in
   @Get('file/:resourceId')
   @ApiResponse({
@@ -189,23 +187,23 @@ eId') resourceId: sting,
   ): Promise<ScanStatusDto> {
     return this.scannerService.getStatusByResourceId(resourceId);
   }
-@ApiResponse({
+
+  @ApiResponse({
     status: 200,
-    descripti"Delete scanned file by record id."id.',
-    type: ScanStatuDto,
+    description: 'Delete scanned file by record id.',
+    type: ScanStatusDto,
   })
   @ApiNotFoundResponse({
     status: 404,
-    descripti"File not found"nd',
+    description: 'File not found',
   })
   @ApiBadRequestResponse({
     status: 400,
-    descripti"File did or bucket uid contains invalid parameters."s.',
+    description: 'File did or bucket uid contains invalid parameters.',
   })
   deleteFileById(
-    @Pa
-  ):
-Promise<ScanStatusDto> {
+    @Param('resourceId') resourceId: string,
+  ): Promise<ScanStatusDto> {
     return this.scannerService.deleteFile(resourceId);
   }
 }
