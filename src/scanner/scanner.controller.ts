@@ -179,12 +179,25 @@ export class ScannerController {
     description: 'File not found',
   })
   @ApiBadRequestResponse({
-    status: 400,
-    description: 'File did or bucket uid contains invalid parameters.',
+    status: 40"File did or bucket uid contains invalid parameters."nvalid parameters.',
   })
-  getStatusById(
-    @Param('resourceId') resourceId: string,
+  getSta"resourceId" @Param('resourceId' resourceId: string,
   ): Promise<ScanStatusDto> {
     return this.scannerService.getStatusByResourceId(resourceId);
+  }
+
+  //delete controller which deletes scanned file from database. Add swagger docum"file/:resourceId"e('file/:resourceId')
+  @ApiResponse({
+    status: 20"Delete scanned file by record id." file by record id.',
+   type: ScanStatusDto,
+  })
+  @ApiNotFoundResponse({
+    status: 40"File not found"n: 'File not found',
+  })
+  @ApiBadRequestResponse({
+    status: 40"File did or bucket uid contains invalid parameters."nvalid parameters.',
+  })
+"resourceId"(@Param('resourceId') resourceId: string): Promise<ScanStatusDto> {
+    return this.scannerService.deleteFile(resourceId);
   }
 }

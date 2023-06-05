@@ -191,23 +191,46 @@ export class ScannerService {
     }
 
     try {
-      if (isBase64(resourceId)) {
-        return await this.prismaService.files.findFirstOrThrow({
-          where: {
-            AND: [
-              { bucketUid: this.configService.get('CLAMAV_UNSCANNED_BUCKET') },
-              { fileUid: resourceId },
-            ],
-          },
-        });
-      } else {
-        return await this.prismaService.files.findUniqueOrThrow({
-          where: { id: resourceId },
-        });
-      }
+      return await this.prismaService.files.findUniqueOrThrow({
+        where: { id: resourceId },
+      });
     } catch (error) {
       throw new NotFoundException(
         `This file with id: ${resourceId} has not been submitted for scanning. Please submit the file for scanning by POST /api/scan.`,
+      );
+    }
+  }
+
+  //delete file from database
+  public async deleteFile(resourceId: string): Promise<ScanStatusDto> {
+    if (!isDefined(resourceId)) {
+      throw new BadRequestException('Please provide a valid id');
+    }
+
+    let file;
+    try {
+      file = await this.prismaService.files.findUniqueOrThrow({
+        where: { id: resourceId },
+      });
+
+      if (!file) {
+        throw new NotFoundException(
+          `This file with id: ${resourceId} has not been submitted for scanning. Please submit the file for scanning by POST /api/scan.`,
+        );
+      }
+    } catch (error) {
+      throw new UnprocessableEntityException(
+        `There was an error with searching for the file.`,
+      );
+    }
+
+    try {
+      return await this.prismaService.files.delete({
+        where: { id: resourceId },
+      });
+    } catch (error) {
+      throw new UnprocessableEntityException(
+        `There was an issue deleting file: ${resourceId} from the database.`,
       );
     }
   }
