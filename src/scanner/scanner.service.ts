@@ -207,6 +207,10 @@ export class ScannerService {
       throw new BadRequestException('Please provide a valid id');
     }
 
+    this.logger.debug(
+      `Received request for deletion of file with id: ${resourceId}`,
+    );
+
     let file;
     try {
       file = await this.prismaService.files.findUniqueOrThrow({
