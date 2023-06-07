@@ -22,6 +22,10 @@ async function bootstrap() {
     .addServer('https://nest-clamav-scanner.dev.bratislava.sk/')
     .addServer('https://nest-clamav-scanner.staging.bratislava.sk/')
     .addServer('https://nest-clamav-scanner.bratislava.sk/')
+    .addBasicAuth({
+      type: 'http',
+      description: 'Basic auth for communication with scanner backend',
+    })
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
