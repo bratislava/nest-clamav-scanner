@@ -10,6 +10,7 @@ import { ClamavClientModule } from './clamav-client/clamav-client.module';
 import { ScannerCronModule } from './scanner-cron/scanner-cron.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { FormsClientModule } from './forms-client/forms-client.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   controllers: [AppController],
@@ -19,6 +20,7 @@ import { FormsClientModule } from './forms-client/forms-client.module';
     StatusModule,
     ScannerModule,
     PrismaModule,
+    AuthModule,
     MinioClientModule,
     ClamavClientModule,
     ScheduleModule.forRoot(),
