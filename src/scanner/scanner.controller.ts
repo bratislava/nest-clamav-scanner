@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Param, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Logger, Param, Post, UseGuards } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
   ApiBasicAuth,
@@ -198,6 +198,7 @@ export class ScannerController {
     return this.scannerService.getStatusByResourceId(resourceId);
   }
 
+  @Delete('file/:resourceId')
   @ApiResponse({
     status: 200,
     description: 'Delete scanned file by record id.',
