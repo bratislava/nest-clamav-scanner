@@ -1,6 +1,7 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Param, Post, UseGuards } from "@nestjs/common";
 import {
   ApiBadRequestResponse,
+  ApiBasicAuth,
   ApiBody,
   ApiGoneResponse,
   ApiNotFoundResponse,
@@ -11,6 +12,7 @@ import {
 } from "@nestjs/swagger";
 import { ScannerService } from "./scanner.service";
 import { ScanFileDto, ScanFileResponseDto, ScanStatusDto } from "./scanner.dto";
+import { BasicGuard } from "../auth/guards/auth-basic.guard";
 
 /*
   Endpoints
@@ -99,6 +101,8 @@ export class ScannerController {
     status: 400,
     description: 'Wrong parameters provided.',
   })
+  @ApiBasicAuth()
+  @UseGuards(BasicGuard)
   @HttpCode(HttpStatus.ACCEPTED)
   scanFiles(
     @Body() bucketFiles: ScanFileDto[],
@@ -139,6 +143,8 @@ export class ScannerController {
     description: 'File or bucket not found.',
   })
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiBasicAuth()
+  @UseGuards(BasicGuard)
   scanFile(@Body() bucketFile: ScanFileDto): Promise<ScanFileResponseDto> {
     this.logger.debug(`Scan file request: ${JSON.stringify(bucketFile)}`);
     return this.scannerService.scanFile(bucketFile);
@@ -159,6 +165,8 @@ export class ScannerController {
     status: 400,
     description: 'File did or bucket uid contains invalid parameters.',
   })
+  @ApiBasicAuth()
+  @UseGuards(BasicGuard)
   getStatus(
     @Param('bucketUid64') bucketId64: string,
     @Param('fileUid64') fileId64: string,
@@ -182,6 +190,8 @@ export class ScannerController {
     status: 400,
     description: 'File did or bucket uid contains invalid parameters.',
   })
+  @ApiBasicAuth()
+  @UseGuards(BasicGuard)
   getStatusById(
     @Param('resourceId') resourceId: string,
   ): Promise<ScanStatusDto> {
@@ -201,6 +211,8 @@ export class ScannerController {
     status: 400,
     description: 'File did or bucket uid contains invalid parameters.',
   })
+  @ApiBasicAuth()
+  @UseGuards(BasicGuard)
   deleteFileById(
     @Param('resourceId') resourceId: string,
   ): Promise<ScanStatusDto> {

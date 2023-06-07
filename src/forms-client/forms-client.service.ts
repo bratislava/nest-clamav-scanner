@@ -37,6 +37,10 @@ export class FormsClientService {
         },
         {
           timeout: 2000,
+          auth: {
+            username: this.configService.get('NEST_FORMS_BACKEND_USERNAME'),
+            password: this.configService.get('NEST_FORMS_BACKEND_PASSWORD'),
+          },
         },
       );
       return response;
