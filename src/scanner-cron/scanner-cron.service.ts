@@ -309,9 +309,13 @@ export class ScannerCronService {
         'SCAN NOT SUCCESSFUL',
       ].includes(status)
     ) {
+      this.logger.debug(`Notifying forms about file id: ${file.id}`);
       const response = await this.formsClientService.updateFileStatus(
         file.id,
         status,
+      );
+      this.logger.debug(
+        `Forms response for file id: ${file.id} is: ${response}`,
       );
 
       if (response === false) {
