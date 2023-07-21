@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Logger, Param, Post, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBasicAuth,
@@ -8,11 +19,11 @@ import {
   ApiOperation,
   ApiPayloadTooLargeResponse,
   ApiResponse,
-  ApiTags
-} from "@nestjs/swagger";
-import { ScannerService } from "./scanner.service";
-import { ScanFileDto, ScanFileResponseDto, ScanStatusDto } from "./scanner.dto";
-import { BasicGuard } from "../auth/guards/auth-basic.guard";
+  ApiTags,
+} from '@nestjs/swagger';
+import { ScannerService } from './scanner.service';
+import { ScanFileDto, ScanFileResponseDto, ScanStatusDto } from './scanner.dto';
+import { BasicGuard } from '../auth/guards/auth-basic.guard';
 
 /*
   Endpoints

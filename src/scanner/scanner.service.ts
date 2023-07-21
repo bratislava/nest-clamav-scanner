@@ -23,9 +23,17 @@ export class ScannerService {
     private readonly configService: ConfigService,
     private minioClientService: MinioClientService,
     private readonly prismaService: PrismaService,
+    private readonly supportedMimeTypes: string[],
   ) {
     this.logger = new Logger('ScannerService');
     this.clamavClientService = new ClamavClientService(configService);
+    this.supportedMimeTypes = this.configService
+      .get(`MIMETYPE_WHITELIST`)
+      .split(' ');
+  }
+
+  public isSupportedMimeType(mimeType: string): boolean {
+    return this.supportedMimeTypes.includes(mimeType);
   }
 
   public async scanFile(bucketFile: ScanFileDto): Promise<ScanFileResponseDto> {
@@ -81,6 +89,13 @@ export class ScannerService {
         );
       }
 
+      const mimeType = fileInfo.metaData['content-type'];
+      if (this.isSupportedMimeType(mimeType) === false) {
+        throw new BadRequestException(
+          `Unsupported file mime-type: ${mimeType}.`,
+        );
+      }
+
       try {
         const result = await this.prismaService.files.create({
           data: {
@@ -88,7 +103,7 @@ export class ScannerService {
             fileUid: bucketFile.fileUid,
             userUid: bucketFile.userUid,
             fileSize: fileInfo.size,
-            fileMimeType: fileInfo.metaData['content-type'],
+            fileMimeType: mimeType,
             status: 'ACCEPTED',
           },
         });
