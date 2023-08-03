@@ -19,12 +19,12 @@ import { FileStatus } from '@prisma/client';
 export class ScannerService {
   private readonly logger: Logger;
   private readonly clamavClientService: ClamavClientService;
+  private readonly supportedMimeTypes: string[];
 
   constructor(
     private readonly configService: ConfigService,
     private minioClientService: MinioClientService,
     private readonly prismaService: PrismaService,
-    private readonly supportedMimeTypes: string[],
   ) {
     this.logger = new Logger('ScannerService');
     this.clamavClientService = new ClamavClientService(configService);
