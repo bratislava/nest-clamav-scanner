@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import * as clamd from 'clamdjs';
 import { execSync } from 'child_process';
 import { Readable as ReadableStream } from 'stream';
+import { FileStatus } from '@prisma/client';
 
 @Injectable()
 export class ClamavClientService {
@@ -26,18 +27,18 @@ export class ClamavClientService {
   }
 
   //function which gets clam reply
-  getScanStatus(result: string): string {
+  getScanStatus(result: string): FileStatus {
     if (result.includes('OK') && !result.includes('FOUND')) {
-      return 'SAFE';
+      return FileStatus.SAFE;
     }
     if (result.includes('FOUND') && !result.includes('OK')) {
-      return 'INFECTED';
+      return FileStatus.INFECTED;
     }
     if (result.includes('SCAN TIMEOUT')) {
-      return 'SCAN TIMEOUT';
+      return FileStatus.SCAN_TIMEOUT;
     }
 
-    return 'SCAN ERROR';
+    return FileStatus.SCAN_ERROR;
   }
 
   //create function which checks if clamav scanner is running

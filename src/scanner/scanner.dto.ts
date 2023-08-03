@@ -1,5 +1,6 @@
-import {ApiProperty} from '@nestjs/swagger';
-import {IsEnum, IsNumber, IsOptional, IsString} from 'class-validator'; //dto for bucket file with file id and bucket id as optional. Add swagger documentation.
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { FileStatus } from '@prisma/client'; //dto for bucket file with file id and bucket id as optional. Add swagger documentation.
 
 //dto for bucket file with file id and bucket id as optional. Add swagger documentation.
 export class ScanFileDto {
@@ -18,16 +19,6 @@ export class ScanFileDto {
   @IsString()
   @IsOptional()
   bucketUid?: string;
-
-  // optional property for user id
-  @ApiProperty({
-    description:
-      'uid/name of the user which will be saved together with the file to db',
-    example: 'super-user',
-  })
-  @IsString()
-  @IsOptional()
-  userUid?: string;
 }
 
 //dto for scan result with file id, bucket id, user id as optional and scan result. Add swagger documentation.
@@ -45,14 +36,6 @@ export class ScanStatusDto {
   })
   @IsString()
   bucketUid: string;
-
-  @ApiProperty({
-    description: 'uid of the user',
-    example: 'ffsdfsd89796',
-  })
-  @IsString()
-  @IsOptional()
-  userUid?: string;
 
   @ApiProperty({
     description: 'File size in bytes',
@@ -127,7 +110,7 @@ export class ScanFileResponseDto {
     example: 'ACCEPTED',
   })
   @IsEnum(['ACCEPTED', 'ERROR'])
-  status: string;
+  status: FileStatus;
 
   //id of the record in db
   @ApiProperty({

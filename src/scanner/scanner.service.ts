@@ -13,6 +13,7 @@ import { MinioClientService } from 'src/minio-client/minio-client.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ScanFileDto, ScanFileResponseDto, ScanStatusDto } from './scanner.dto';
 import { isBase64, isDefined, isValid } from '../common/utils/helpers';
+import { FileStatus } from '@prisma/client';
 
 @Injectable()
 export class ScannerService {
@@ -101,10 +102,9 @@ export class ScannerService {
           data: {
             bucketUid: bucketFile.bucketUid,
             fileUid: bucketFile.fileUid,
-            userUid: bucketFile.userUid,
             fileSize: fileInfo.size,
             fileMimeType: mimeType,
-            status: 'ACCEPTED',
+            status: FileStatus.ACCEPTED,
           },
         });
 
@@ -139,7 +139,7 @@ export class ScannerService {
     //check if bucketFiles array contains more than 20 files
     if (bucketFiles.length > this.configService.get('MAX_FILES_PER_REQUEST')) {
       throw new PayloadTooLargeException(
-        'Please provide a maximum of 20 files!',
+        'Please provide a maximum of X files!',
       );
     }
 
@@ -231,15 +231,15 @@ export class ScannerService {
       file = await this.prismaService.files.findUniqueOrThrow({
         where: { id: resourceId },
       });
-
-      if (!file) {
-        throw new NotFoundException(
-          `This file with id: ${resourceId} has not been submitted for scanning. Please submit the file for scanning by POST /api/scan.`,
-        );
-      }
     } catch (error) {
       throw new UnprocessableEntityException(
         `There was an error with searching for the file.`,
+      );
+    }
+
+    if (!file) {
+      throw new NotFoundException(
+        `This file with id: ${resourceId} has not been submitted for scanning. Please submit the file for scanning by POST /api/scan.`,
       );
     }
 
