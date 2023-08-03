@@ -1,29 +1,5 @@
 import { isString } from 'class-validator';
-
-const validScanStatuses = [
-  //when file was accepted for scanning
-  'ACCEPTED',
-  //when file is queued for scanning by the scan worker
-  'QUEUED',
-  //when file is being scanned by clamav
-  'SCANNING',
-  //when scan result is safe
-  'SAFE',
-  //when scan result is infected
-  'INFECTED',
-  //when file is not found in minio
-  'NOT FOUND',
-  //when file is safe but there was an error while moving it to safe bucket
-  'MOVE ERROR SAFE',
-  //when file is infected but there was an error while moving it to infected bucket
-  'MOVE ERROR INFECTED',
-  //when there was a clamav error while scanning file
-  'SCAN ERROR',
-  //when scan by clamav timed out
-  'SCAN TIMEOUT',
-  //after x number of unsuccessful scans, this status is set
-  'SCAN NOT SUCCESSFUL',
-];
+import { FileStatus } from '@prisma/client';
 
 export function isValid(resource: any): boolean {
   if (!isString(resource)) {
@@ -52,12 +28,12 @@ export function isBase64(str: string): boolean {
 
 //check if scan status is valid
 export function isValidScanStatus(status: string): boolean {
-  return validScanStatuses.includes(status);
+  return Object.values(FileStatus).includes(status as FileStatus);
 }
 
 // return list of statuses in string
 export function listOfStatuses(): string {
-  return validScanStatuses.join(', ');
+  return Object.values(FileStatus).toString();
 }
 
 //function which splits array into chunks of size n
@@ -71,6 +47,6 @@ export function chunkArray<T>(arr: T[], n: number): T[][] {
 
 export function timeout(ms) {
   return new Promise((resolve) => {
-    setTimeout(() => resolve('SCAN TIMEOUT'), ms);
+    setTimeout(() => resolve(FileStatus.SCAN_TIMEOUT), ms);
   });
 }

@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native"]
@@ -11,28 +8,53 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum FileStatus {
+  // when file was accepted for scanning
+  ACCEPTED
+  // when file is queued for scanning by the scan worker
+  QUEUED
+  // when file is being scanned by clamav
+  SCANNING
+  // when scan result is safe
+  SAFE
+  // when scan result is infected
+  INFECTED
+  // when file is not found in minio
+  NOT_FOUND
+  // when file is safe but there was an error while moving it to safe bucket
+  MOVE_ERROR_SAFE
+  // when file is infected but there was an error while moving it to infected bucket
+  MOVE_ERROR_INFECTED
+  // when there was a clamav error while scanning file
+  SCAN_ERROR
+  // when scan by clamav timed out
+  SCAN_TIMEOUT
+  // after x number of unsuccessful scans, this status is set
+  SCAN_NOT_SUCCESSFUL
+  // when file id is not found in forms
+  FORM_ID_NOT_FOUND
+}
+
 model Files {
-  id           String   @id @default(uuid())
+  id           String     @id @default(uuid())
   // file indentifier
   fileUid      String
   // bucket indentifier
   bucketUid    String
-  // optional user indentifier
-  userUid      String?
   // file size from minio
   fileSize     Int
   // file mime type
   fileMimeType String
   // status of the scanner file
-  status       String   @default("ACCEPTED")
+  status       FileStatus @default(ACCEPTED)
   // if the forms where notified about status change
-  notified     Boolean  @default(false)
+  notified     Boolean    @default(false)
   // number of times the file was scanned
-  runs         Int      @default(0)
+  runs         Int        @default(0)
   // reserved for som other data
   meta         Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  @@index([fileUid, bucketUid, userUid, fileSize, status, notified])
+  @@index([fileUid, bucketUid, fileSize, status, notified])
 }

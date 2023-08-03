@@ -1,5 +1,7 @@
+import { FileStatus } from '@prisma/client';
+
 export class UpdateScanStatusDto {
-  status: string;
+  status: FileStatus;
   notified: boolean;
   runs?: number;
 }
