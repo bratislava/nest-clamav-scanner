@@ -92,7 +92,11 @@ export class ScannerService {
       }
 
       // TODO clamav has always octet stream as mime type on file. Needs to do other validation of mimetype in future.
-      const mimeType = contentType(bucketFile.fileUid);
+
+      // get file format from bucketFile.fileUid
+      const fileFormat = bucketFile.fileUid.split('.').pop();
+      const proformaName = `proforma.${fileFormat}`;
+      const mimeType = contentType(proformaName);
       if (this.isSupportedMimeType(<string>mimeType) === false) {
         throw new BadRequestException(
           `Unsupported file mime-type: ${mimeType}.`,
