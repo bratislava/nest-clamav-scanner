@@ -14,6 +14,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ScanFileDto, ScanFileResponseDto, ScanStatusDto } from './scanner.dto';
 import { isBase64, isDefined, isValid } from '../common/utils/helpers';
 import { FileStatus } from '@prisma/client';
+import { contentType } from 'mime-types';
 
 @Injectable()
 export class ScannerService {
@@ -91,15 +92,12 @@ export class ScannerService {
       }
 
       // TODO clamav has always octet stream as mime type on file. Needs to do other validation of mimetype in future.
-      const mimeType = null;
-      /*
-      const mimeType = fileInfo.metaData['content-type'];
-      if (this.isSupportedMimeType(mimeType) === false) {
+      const mimeType = contentType(bucketFile.fileUid);
+      if (this.isSupportedMimeType(<string>mimeType) === false) {
         throw new BadRequestException(
           `Unsupported file mime-type: ${mimeType}.`,
         );
       }
-      */
 
       try {
         const result = await this.prismaService.files.create({
@@ -107,7 +105,7 @@ export class ScannerService {
             bucketUid: bucketFile.bucketUid,
             fileUid: bucketFile.fileUid,
             fileSize: fileInfo.size,
-            fileMimeType: mimeType,
+            fileMimeType: <string>mimeType,
             status: FileStatus.ACCEPTED,
           },
         });
