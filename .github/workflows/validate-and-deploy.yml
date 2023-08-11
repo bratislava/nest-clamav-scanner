@@ -1,4 +1,4 @@
-name: Nest deploy pipeline
+name: Validate and Deploy
 on:
   push:
     tags:
@@ -7,17 +7,25 @@ on:
       - 'prod**'
     branches:
       - master
-
+  pull_request:
+    branches:
+      - master
 jobs:
+  validate:
+    name: Validate code
+    uses: bratislava/github-actions/.github/workflows/validate-nest-prisma-inhouse.yml@stable
+
   conditions:
     name: Check for cluster conditions
-    uses: bratislava/github-actions/.github/workflows/cluster-deploy-conditions-simple.yml@stable-simple
+    needs: validate
+    uses: bratislava/github-actions/.github/workflows/cluster-deploy-conditions-simple-inhouse.yml@stable
+    permissions: write-all
 
   deploy-dev:
     name: Deploy to dev
     if: needs.conditions.outputs.dev == 'true'
     needs: conditions
-    uses: bratislava/github-actions/.github/workflows/deploy-with-bratiska-cli.yml@beta
+    uses: bratislava/github-actions/.github/workflows/deploy-with-bratiska-cli-inhouse.yml@beta
     with:
       directory: ./
       cluster: tkg-innov-dev
@@ -28,12 +36,13 @@ jobs:
       service-account: ${{ secrets.DEV_STANDALONE_TOKEN }}
       registry-pass: ${{ secrets.HARBOR_REGISTRY_PASSWORD }}
       sentry-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+    permissions: write-all
 
   deploy-staging:
     name: Deploy to staging
     if: needs.conditions.outputs.staging == 'true'
-    needs: [ conditions ]
-    uses: bratislava/github-actions/.github/workflows/deploy-with-bratiska-cli.yml@stable
+    needs: [conditions]
+    uses: bratislava/github-actions/.github/workflows/deploy-with-bratiska-cli-inhouse.yml@stable
     with:
       directory: ./
       cluster: tkg-innov-staging
@@ -44,12 +53,13 @@ jobs:
       service-account: ${{ secrets.STAGING_STANDALONE_TOKEN }}
       registry-pass: ${{ secrets.HARBOR_REGISTRY_PASSWORD }}
       sentry-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+    permissions: write-all
 
   deploy-prod:
     name: Deploy to prod
     if: needs.conditions.outputs.prod == 'true'
-    needs: [ conditions ]
-    uses: bratislava/github-actions/.github/workflows/deploy-with-bratiska-cli.yml@stable
+    needs: [conditions]
+    uses: bratislava/github-actions/.github/workflows/deploy-with-bratiska-cli-inhouse.yml@stable
     with:
       directory: ./
       cluster: tkg-innov-prod
@@ -59,3 +69,4 @@ jobs:
       service-account: ${{ secrets.PROD_STANDALONE_TOKEN }}
       registry-pass: ${{ secrets.HARBOR_REGISTRY_PASSWORD }}
       sentry-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+    permissions: write-all
