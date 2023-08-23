@@ -45,7 +45,7 @@ spec:
             - secretRef:
                 name: ${BUILD_REPOSITORY_NAME}-scanner-secret
             - secretRef:
-                name: minio-secret-standalone
+                name: s3-minio-forms-secret
           readinessProbe:
             httpGet:
               path: /api
