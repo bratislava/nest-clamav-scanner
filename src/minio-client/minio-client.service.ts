@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MinioService } from 'nestjs-minio-client';
-import * as Minio from 'minio';
 
 @Injectable()
 export class MinioClientService {
@@ -74,7 +73,7 @@ export class MinioClientService {
     destinationBucketName: string,
     destinationFileName: string,
   ) {
-    const conds = new Minio.CopyConditions();
+    const conds = new this.minioService.copyConditions();
 
     this.logger.debug(
       `Moving file ${sourceFileName} from bucket ${sourceBucketName} to bucket ${destinationBucketName} with name ${destinationFileName}`,
