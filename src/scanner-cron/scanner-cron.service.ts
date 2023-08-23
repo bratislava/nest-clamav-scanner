@@ -164,7 +164,7 @@ export class ScannerCronService {
     try {
       await this.updateScanStatusWithNotify(file, FileStatus.SCANNING);
     } catch (error) {
-      throw new PreconditionFailedException(
+      return Promise.reject(
         `${file.fileUid} could not be updated to SCANNING status.`,
       );
     }
@@ -207,7 +207,7 @@ export class ScannerCronService {
         file.fileUid,
       );
       if (!moveStatus) {
-        let moveErrorStatus;
+        let moveErrorStatus: FileStatus;
         if (scanStatus === FileStatus.SAFE) {
           moveErrorStatus = FileStatus.MOVE_ERROR_SAFE;
         }
@@ -217,7 +217,7 @@ export class ScannerCronService {
 
         await this.updateScanStatusWithNotify(file, moveErrorStatus);
 
-        throw new PreconditionFailedException(
+        return Promise.reject(
           `${file.fileUid} could not be moved to ${scanStatus} bucket.`,
         );
       }
@@ -227,7 +227,7 @@ export class ScannerCronService {
     try {
       await this.updateScanStatusWithNotify(file, scanStatus);
     } catch (error) {
-      throw new PreconditionFailedException(
+      Promise.reject(
         `${file.fileUid} could not be updated to ${scanStatus} status.`,
       );
     }
