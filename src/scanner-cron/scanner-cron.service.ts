@@ -154,12 +154,12 @@ export class ScannerCronService {
       let results: any[];
       try {
         results = await Promise.all(promiseQueue);
+        this.logger.log(
+          `Batch scan finished with results: ${results.join(', ')}`,
+        );
       } catch (error) {
         this.logger.error(error);
       }
-      this.logger.log(
-        `Batch scan finished with results: ${results.join(', ')}`,
-      );
       j++;
     }
     this.logger.log(`All batches scanned. Sleeping.`);
