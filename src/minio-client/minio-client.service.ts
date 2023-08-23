@@ -79,7 +79,7 @@ export class MinioClientService {
     destinationBucketName: string,
     destinationFileName: string,
   ) {
-    const conds = new CopyConditions();
+    const conds = CopyConditions;
 
     this.logger.debug(
       `Moving file ${sourceFileName} from bucket ${sourceBucketName} to bucket ${destinationBucketName} with name ${destinationFileName}`,

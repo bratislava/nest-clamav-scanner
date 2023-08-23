@@ -197,17 +197,16 @@ export class ScannerCronService {
 
     //move file to safe or infected bucket if scan status is SAFE or INFECTED
     if (scanStatus === FileStatus.SAFE || scanStatus === FileStatus.INFECTED) {
-      try {
-        const destinationBucket = this.configService.get(
-          `CLAMAV_${scanStatus}_BUCKET`,
-        );
-        await this.minioClientService.moveFileBetweenBuckets(
-          file.bucketUid,
-          file.fileUid,
-          destinationBucket,
-          file.fileUid,
-        );
-      } catch (error) {
+      const destinationBucket = this.configService.get(
+        `CLAMAV_${scanStatus}_BUCKET`,
+      );
+      const moveStatus = await this.minioClientService.moveFileBetweenBuckets(
+        file.bucketUid,
+        file.fileUid,
+        destinationBucket,
+        file.fileUid,
+      );
+      if (!moveStatus) {
         let moveErrorStatus;
         if (scanStatus === FileStatus.SAFE) {
           moveErrorStatus = FileStatus.MOVE_ERROR_SAFE;
