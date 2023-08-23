@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MinioService } from 'nestjs-minio-client';
-import { CopyConditions } from 'minio';
+import * as Minio from 'minio';
 
 @Injectable()
 export class MinioClientService {
@@ -60,12 +60,7 @@ export class MinioClientService {
   //function which checks if file exists in minio bucket
   public async fileExists(bucketName: string, fileName: string) {
     try {
-      const result = await this.minioService.client.statObject(
-        bucketName,
-        fileName,
-      );
-
-      return result;
+      return await this.minioService.client.statObject(bucketName, fileName);
     } catch (error) {
       this.logger.error(error);
       return false;
@@ -79,7 +74,7 @@ export class MinioClientService {
     destinationBucketName: string,
     destinationFileName: string,
   ) {
-    const conds = new CopyConditions();
+    const conds = new Minio.CopyConditions();
 
     this.logger.debug(
       `Moving file ${sourceFileName} from bucket ${sourceBucketName} to bucket ${destinationBucketName} with name ${destinationFileName}`,
