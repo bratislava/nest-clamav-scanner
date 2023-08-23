@@ -151,7 +151,12 @@ export class ScannerCronService {
       }
 
       //wait for all promises to be resolved
-      const results = await Promise.all(promiseQueue);
+      let results: any[];
+      try {
+        results = await Promise.all(promiseQueue);
+      } catch (error) {
+        this.logger.error(error);
+      }
       this.logger.log(
         `Batch scan finished with results: ${results.join(', ')}`,
       );
