@@ -137,9 +137,10 @@ export class ScannerService {
     }
 
     //check if bucketFiles array contains more than 20 files
-    if (bucketFiles.length > this.configService.get('MAX_FILES_PER_REQUEST')) {
+    const maxFiles: number = +this.configService.get('MAX_FILES_PER_REQUEST');
+    if (bucketFiles.length > maxFiles) {
       throw new PayloadTooLargeException(
-        'Please provide a maximum of X files!',
+        `Please provide a maximum of ${maxFiles} files!`,
       );
     }
 
