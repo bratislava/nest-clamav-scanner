@@ -32,6 +32,7 @@ jobs:
       url: https://tkg.dev.bratislava.sk
       debug: --debug
       version: beta
+      username: robot$standalone_github_pipeline_dependabot
     secrets:
       service-account: ${{ secrets.DEV_STANDALONE_TOKEN }}
       registry-pass: ${{ secrets.HARBOR_REGISTRY_PASSWORD }}
