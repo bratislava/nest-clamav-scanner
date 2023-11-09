@@ -1,8 +1,14 @@
+FROM node:20.9.0 AS base
+FROM node:20.9.0-alpine AS base-alpine
+
 # build
-FROM node:16.10.0 AS build
+FROM base AS build
+
+RUN apt-get update && apt-get install git
 
 WORKDIR /root/app
 COPY package*.json ./
+# COPY prisma ./prisma/
 
 RUN npm ci
 
@@ -15,7 +21,7 @@ RUN npx prisma migrate
 RUN npm run build
 
 # development
-FROM node:16.10.0 AS dev
+FROM base AS dev
 
 RUN apt-get update && apt-get install -y git \
     curl \
@@ -33,9 +39,7 @@ CMD [ "npm", "run", "start:debug" ]
 
 
 # production
-FROM node:16.10.0 AS prod
-
-RUN apt-get update && apt-get install netcat -y
+FROM base-alpine AS prod
 
 USER node
 
