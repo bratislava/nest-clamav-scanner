@@ -1,5 +1,5 @@
-FROM node:20.9.0 AS base
-FROM node:20.9.0-alpine AS base-alpine
+FROM node:20.9 AS base
+FROM node:20.9-alpine AS base-alpine
 
 # build
 FROM base AS build
@@ -13,7 +13,7 @@ RUN npm ci
 
 COPY . ./
 
-RUN npx prisma generate --schema=./prisma/schema.deployment.prisma
+RUN npx prisma generate --schema=./prisma/schema.prisma
 
 RUN npx prisma migrate
 
@@ -23,6 +23,7 @@ RUN npm run build
 FROM base AS dev
 
 RUN apt-get update && apt-get install -y git \
+    postgresql-client \
     curl \
     vim
 
@@ -54,5 +55,3 @@ COPY --chown=node:node --from=build /root/app/prisma ./prisma
 COPY --chown=node:node nest-cli.json ./nest-cli.json
 
 ENTRYPOINT npx prisma migrate deploy && npm run start:prod
-
-
