@@ -9,7 +9,7 @@ export class ScanFileDto {
     example: 'ffsdfsd89796.pdf',
   })
   @IsString()
-  fileUid: string;
+  minioFileName: string;
 
   @ApiProperty({
     description:
@@ -28,7 +28,7 @@ export class ScanStatusDto {
     example: 'ffsdfsd89796',
   })
   @IsString()
-  fileUid: string;
+  minioFileName: string;
 
   @ApiProperty({
     description: 'uid of the bucket',
@@ -126,7 +126,7 @@ export class ScanFileResponseDto {
     example: 'file name or file uid.pdf',
   })
   @IsString()
-  fileUid: string;
+  minioFileName: string;
 
   @ApiProperty({
     description: 'more info',

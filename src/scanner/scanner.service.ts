@@ -40,8 +40,8 @@ export class ScannerService {
 
   public async scanFile(bucketFile: ScanFileDto): Promise<ScanFileResponseDto> {
     {
-      if (!isValid(bucketFile.fileUid)) {
-        throw new BadRequestException('Please provide a valid fileUid.');
+      if (!isValid(bucketFile.minioFileName)) {
+        throw new BadRequestException('Please provide a valid minioFileName.');
       }
 
       if (!isValid(bucketFile.bucketUid)) {
@@ -55,32 +55,32 @@ export class ScannerService {
         where: {
           AND: [
             { bucketUid: bucketFile.bucketUid },
-            { fileUid: bucketFile.fileUid },
+            { minioFileName: bucketFile.minioFileName },
           ],
         },
       });
 
       if (fileStatus) {
-        //base64 bucketUid and fileUid
+        //base64 bucketUid and minioFileName
         const bucketUid64 = Buffer.from(bucketFile.bucketUid).toString(
           'base64',
         );
-        const fileUid64 = Buffer.from(bucketFile.fileUid).toString('base64');
+        const minioFileName64 = Buffer.from(bucketFile.minioFileName).toString('base64');
 
         throw new GoneException(
-          `This file has already been submitted for scanning. Please check the status of the scan by GET /api/scan/${fileUid64}/${bucketUid64} or by GET /api/scan/${fileStatus.id}`,
+          `This file has already been submitted for scanning. Please check the status of the scan by GET /api/scan/${minioFileName64}/${bucketUid64} or by GET /api/scan/${fileStatus.id}`,
         );
       }
 
       //check if file exists in minio
       const fileInfo = await this.minioClientService.fileExists(
         bucketFile.bucketUid,
-        bucketFile.fileUid,
+        bucketFile.minioFileName,
       );
 
       if (!fileInfo) {
         throw new NotFoundException(
-          `This file: ${bucketFile.fileUid} does not exist in the bucket '${bucketFile.bucketUid}'. Please check if the bucketUid or fileUid is correct.`,
+          `This file: ${bucketFile.minioFileName} does not exist in the bucket '${bucketFile.bucketUid}'. Please check if the bucketUid or minioFileName is correct.`,
         );
       }
 
@@ -93,8 +93,8 @@ export class ScannerService {
 
       // TODO clamav has always octet stream as mime type on file. Needs to do other validation of mimetype in future.
 
-      // get file format from bucketFile.fileUid
-      const fileFormat = bucketFile.fileUid.split('.').pop();
+      // get file format from bucketFile.minioFileName
+      const fileFormat = bucketFile.minioFileName.split('.').pop();
       const proformaName = `proforma.${fileFormat}`;
       const mimeType = contentType(proformaName);
       if (this.isSupportedMimeType(<string>mimeType) === false) {
@@ -107,7 +107,7 @@ export class ScannerService {
         const result = await this.prismaService.files.create({
           data: {
             bucketUid: bucketFile.bucketUid,
-            fileUid: bucketFile.fileUid,
+            minioFileName: bucketFile.minioFileName,
             fileSize: fileInfo.size,
             fileMimeType: <string>mimeType,
             status: FileStatus.ACCEPTED,
@@ -117,8 +117,8 @@ export class ScannerService {
         return {
           status: 'ACCEPTED',
           id: result.id,
-          fileUid: bucketFile.fileUid,
-          message: `File: ${bucketFile.fileUid} has been successfully accepted for scanning.`,
+          minioFileName: bucketFile.minioFileName,
+          message: `File: ${bucketFile.minioFileName} has been successfully accepted for scanning.`,
         };
       } catch (error) {
         this.logger.error(error);
@@ -154,14 +154,14 @@ export class ScannerService {
 
     //loop through bucketFiles array bucketFiles of files
     for (const bucketFile of bucketFiles) {
-      //check naming convention of fileUid
+      //check naming convention of minioFileName
       let result: ScanFileResponseDto;
       try {
         result = await this.scanFile(bucketFile);
       } catch (error) {
         result = {
           status: error.name,
-          fileUid: bucketFile.fileUid,
+          minioFileName: bucketFile.minioFileName,
           id: null,
           message: error.message,
         };
@@ -172,35 +172,35 @@ export class ScannerService {
     return scanFileResponseDto;
   }
 
-  //function which returns scanner status by fileUid from prisma
+  //function which returns scanner status by minioFileName from prisma
   public async getStatus(
     bucketUid64: string,
-    fileUid64: string,
+    minioFileName64: string,
   ): Promise<ScanStatusDto> {
-    //check if fileUid64 and bucketUid64 are valid base64 strings
-    if (!isBase64(bucketUid64) || !isBase64(fileUid64)) {
+    //check if minioFileName64 and bucketUid64 are valid base64 strings
+    if (!isBase64(bucketUid64) || !isBase64(minioFileName64)) {
       throw new BadRequestException(
-        'Base64 of bucketUid or fileUid is not correct.',
+        'Base64 of bucketUid or minioFileName is not correct.',
       );
     }
     const bucketUid = Buffer.from(bucketUid64, 'base64').toString('ascii');
-    const fileUid = Buffer.from(fileUid64, 'base64').toString('ascii');
+    const minioFileName = Buffer.from(minioFileName64, 'base64').toString('ascii');
 
-    if (!isValid(bucketUid) && !isValid(fileUid)) {
+    if (!isValid(bucketUid) && !isValid(minioFileName)) {
       throw new BadRequestException(
-        'Please provide a valid bucketUid and fileUid.',
+        'Please provide a valid bucketUid and minioFileName.',
       );
     }
 
     try {
       return await this.prismaService.files.findFirstOrThrow({
         where: {
-          AND: [{ bucketUid: bucketUid }, { fileUid: fileUid }],
+          AND: [{ bucketUid: bucketUid }, { minioFileName: minioFileName }],
         },
       });
     } catch (error) {
       throw new NotFoundException(
-        `This file: ${fileUid} has not been submitted for scanning. Please submit the file for scanning by POST /api/scan.`,
+        `This file: ${minioFileName} has not been submitted for scanning. Please submit the file for scanning by POST /api/scan.`,
       );
     }
   }

@@ -170,7 +170,7 @@ export class ScannerCronService {
       await this.updateScanStatusWithNotify(file, FileStatus.SCANNING);
     } catch (error) {
       return Promise.reject(
-        `${file.fileUid} could not be updated to SCANNING status.`,
+        `${file.minioFileName} could not be updated to SCANNING status.`,
       );
     }
 
@@ -178,15 +178,15 @@ export class ScannerCronService {
     try {
       fileStream = await this.minioClientService.loadFileStream(
         file.bucketUid,
-        file.fileUid,
+        file.minioFileName,
       );
     } catch (error) {
       await this.updateScanStatusWithNotify(file, FileStatus.NOT_FOUND);
 
-      this.logger.error(`${file.fileUid} not found in minio bucket.`);
+      this.logger.error(`${file.minioFileName} not found in minio bucket.`);
       return FileStatus.NOT_FOUND;
     }
-    this.logger.debug(`${file.fileUid} is in Minio`);
+    this.logger.debug(`${file.minioFileName} is in Minio`);
 
     //scan file in clamav
     let scanStatus: FileStatus;
@@ -194,7 +194,7 @@ export class ScannerCronService {
       scanStatus = await this.scanFileInClamav(file, fileStream);
     } catch (error) {
       this.logger.error(
-        `${file.fileUid} could not be scanned. Error: ${error}`,
+        `${file.minioFileName} could not be scanned. Error: ${error}`,
       );
       await this.updateScanStatusWithNotify(file, FileStatus.SCAN_ERROR);
       return FileStatus.SCAN_ERROR;
@@ -207,9 +207,9 @@ export class ScannerCronService {
       );
       const moveStatus = await this.minioClientService.moveFileBetweenBuckets(
         file.bucketUid,
-        file.fileUid,
+        file.minioFileName,
         destinationBucket,
-        file.fileUid,
+        file.minioFileName,
       );
       if (!moveStatus) {
         let moveErrorStatus: FileStatus;
@@ -223,7 +223,7 @@ export class ScannerCronService {
         await this.updateScanStatusWithNotify(file, moveErrorStatus);
 
         return Promise.reject(
-          `${file.fileUid} could not be moved to ${scanStatus} bucket.`,
+          `${file.minioFileName} could not be moved to ${scanStatus} bucket.`,
         );
       }
     }
@@ -233,7 +233,7 @@ export class ScannerCronService {
       await this.updateScanStatusWithNotify(file, scanStatus);
     } catch (error) {
       Promise.reject(
-        `${file.fileUid} could not be updated to ${scanStatus} status.`,
+        `${file.minioFileName} could not be updated to ${scanStatus} status.`,
       );
     }
 
@@ -245,7 +245,7 @@ export class ScannerCronService {
     fileStream: ReadableStream,
   ): Promise<FileStatus> {
     const startTime = Date.now();
-    this.logger.debug(`${file.fileUid} scanning started`);
+    this.logger.debug(`${file.minioFileName} scanning started`);
     let response = 'EMPTY';
     try {
       response = await Promise.race([
@@ -253,10 +253,10 @@ export class ScannerCronService {
         this.clamavClientService.scanStream(fileStream),
       ]);
       this.logger.debug(
-        `${file.fileUid} scanning response from clamav: ${response}`,
+        `${file.minioFileName} scanning response from clamav: ${response}`,
       );
     } catch (error) {
-      this.logger.error(`${file.fileUid} there was a scanning error: ${error}`);
+      this.logger.error(`${file.minioFileName} there was a scanning error: ${error}`);
     } finally {
       //stream is destroyed in all situations to prevent any resource leaks.
       fileStream.destroy();
@@ -264,7 +264,7 @@ export class ScannerCronService {
     const result: FileStatus = this.clamavClientService.getScanStatus(response);
     const scanDuration = Date.now() - startTime;
     this.logger.log(
-      `${file.fileUid} was scanned in: ${scanDuration}ms with result: ${result}`,
+      `${file.minioFileName} was scanned in: ${scanDuration}ms with result: ${result}`,
     );
     return result;
   }
@@ -370,7 +370,7 @@ export class ScannerCronService {
         runs: numberOfRuns,
       };
       this.logger.debug(
-        `Number of runs for ${file.fileUid} is ${file.runs} increasing to ${numberOfRuns}`,
+        `Number of runs for ${file.minioFileName} is ${file.runs} increasing to ${numberOfRuns}`,
       );
     }
 
@@ -417,7 +417,7 @@ export class ScannerCronService {
 
     for (const file of scanNotSuccessfulFiles) {
       this.logger.log(
-        `Changing state of ${file.fileUid} from ${file.status} to SCAN NOT SUCCESSFUL.`,
+        `Changing state of ${file.minioFileName} from ${file.status} to SCAN NOT SUCCESSFUL.`,
       );
       await this.updateScanStatusWithNotify(
         file,
@@ -521,7 +521,7 @@ export class ScannerCronService {
         await this.updateScanStatusWithNotify(file, file.status);
       } catch (error) {
         this.logger.error(
-          `Could not notify forms backend about file ${file.fileUid} with status ${file.status}.`,
+          `Could not notify forms backend about file ${file.minioFileName} with status ${file.status}.`,
         );
       }
     }

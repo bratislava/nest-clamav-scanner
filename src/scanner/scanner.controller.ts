@@ -52,34 +52,34 @@ export class ScannerController {
       oneFile: {
         value: [
           {
-            fileUid: 'name.jpg',
+            minioFileName: 'name.jpg',
           },
         ],
       },
       moreFiles: {
         value: [
           {
-            fileUid: 'name.jpg',
+            minioFileName: 'name.jpg',
           },
           {
-            fileUid: 'name2.jpg',
+            minioFileName: 'name2.jpg',
           },
           {
-            fileUid: 'name3.jpg',
+            minioFileName: 'name3.jpg',
           },
         ],
       },
       specifyBucket: {
         value: [
           {
-            fileUid: 'name.jpg',
+            minioFileName: 'name.jpg',
             bucketUid: 'bucket-unique-name-or-uid',
           },
           {
-            fileUid: 'name2.jpg',
+            minioFileName: 'name2.jpg',
           },
           {
-            fileUid: 'name3.jpg',
+            minioFileName: 'name3.jpg',
             bucketUid: 'bucket-unique-name-or-uid',
           },
         ],
@@ -87,16 +87,16 @@ export class ScannerController {
       specifyUserUid: {
         value: [
           {
-            fileUid: 'name.jpg',
+            minioFileName: 'name.jpg',
             bucketUid: 'bucket-unique-name-or-uid',
             userUid: 'user-unique-name-or-uid',
           },
           {
-            fileUid: 'name2.jpg',
+            minioFileName: 'name2.jpg',
             userUid: 'user-unique-name-or-uid',
           },
           {
-            fileUid: 'name3.jpg',
+            minioFileName: 'name3.jpg',
             bucketUid: 'bucket-unique-name-or-uid',
           },
         ],
@@ -162,7 +162,7 @@ export class ScannerController {
   }
 
   //get controller which returns status of scanned file. Add swagger documentation.
-  @Get('file/:fileUid64/:bucketUid64')
+  @Get('file/:minioFileName64/:bucketUid64')
   @ApiResponse({
     status: 200,
     description: 'get status of scanned file. Params are in base64 format.',
@@ -180,7 +180,7 @@ export class ScannerController {
   @UseGuards(BasicGuard)
   getStatus(
     @Param('bucketUid64') bucketId64: string,
-    @Param('fileUid64') fileId64: string,
+    @Param('minioFileName64') fileId64: string,
   ): Promise<ScanStatusDto> {
     return this.scannerService.getStatus(bucketId64, fileId64);
   }
@@ -190,7 +190,7 @@ export class ScannerController {
   @ApiResponse({
     status: 200,
     description:
-      'Get status of scanned file by record id or by fileUid in base64. When using fileUid (filename) in base64 we will use default bucket as default.',
+      'Get status of scanned file by record id or by minioFileName in base64. When using minioFileName (filename) in base64 we will use default bucket as default.',
     type: ScanStatusDto,
   })
   @ApiNotFoundResponse({

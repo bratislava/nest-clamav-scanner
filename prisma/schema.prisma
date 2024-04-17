@@ -36,25 +36,25 @@ enum FileStatus {
 }
 
 model Files {
-  id           String     @id @default(uuid())
+  id              String     @id @default(uuid())
   // file indentifier
-  fileUid      String
+  minioFileName   String
   // bucket indentifier
-  bucketUid    String
+  bucketUid       String
   // file size from minio
-  fileSize     Int
+  fileSize        Int
   // file mime type
-  fileMimeType String
+  fileMimeType    String
   // status of the scanner file
-  status       FileStatus @default(ACCEPTED)
+  status          FileStatus @default(ACCEPTED)
   // if the forms where notified about status change
-  notified     Boolean    @default(false)
+  notified        Boolean    @default(false)
   // number of times the file was scanned
-  runs         Int        @default(0)
+  runs            Int        @default(0)
   // reserved for som other data
-  meta         Json?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  meta            Json?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
-  @@index([fileUid, bucketUid, fileSize, status, notified])
+  @@index([minioFileName, bucketUid, fileSize, status, notified])
 }
